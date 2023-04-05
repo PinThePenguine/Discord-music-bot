@@ -5,12 +5,15 @@ from dotenv import load_dotenv
 import asyncio
 from loguru import logger
 
-def only_level(level):
+def logger_only_level(level):
+    """
+    Filter for logger to write down only one log level.
+    """
     def is_level(record): return record['level'].name == level
     return is_level
 
 logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/error.log", format="{time} {level} {message}", level="ERROR")
-logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/info.log", format="{time} {level} {message}", level="INFO", filter=only_level("INFO"))
+logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/info.log", format="{time} {level} {message}", level="INFO", filter=logger_only_level("INFO"))
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
