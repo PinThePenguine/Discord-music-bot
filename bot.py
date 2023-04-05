@@ -1,9 +1,11 @@
+import asyncio
+import os
+
 import discord
 from discord.ext import commands
-import os
 from dotenv import load_dotenv
-import asyncio
 from loguru import logger
+
 
 def logger_only_level(level):
     """
@@ -12,12 +14,16 @@ def logger_only_level(level):
     def is_level(record): return record['level'].name == level
     return is_level
 
-logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/error.log", format="{time} {level} {message}", level="ERROR")
-logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/info.log", format="{time} {level} {message}", level="INFO", filter=logger_only_level("INFO"))
+
+logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/error.log",
+           format="{time} {level} {message}", level="ERROR")
+logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/info.log",
+           format="{time} {level} {message}", level="INFO", filter=logger_only_level("INFO"))
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+
 
 async def load_cogs():
     """
