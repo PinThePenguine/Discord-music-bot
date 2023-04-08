@@ -22,7 +22,7 @@ logger.add(f"{os.path.realpath(os.path.dirname(__file__))}/logs/info.log",
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='>', intents=discord.Intents.all())
 
 
 async def load_cogs():
@@ -41,5 +41,10 @@ async def load_cogs():
                 logger.error(f"Failed to load cog {filename}\n{exception}")
 
 
-asyncio.run(load_cogs())
-bot.run(TOKEN)
+def main():
+    asyncio.run(load_cogs())
+    bot.run(TOKEN)
+
+
+if __name__ == '__main__':
+    main()
