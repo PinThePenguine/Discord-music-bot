@@ -27,6 +27,22 @@ class Song:
 
 
 class Playlist:
+    """
+    A doubly linked list implementation to store and manage a playlist of songs.
+
+    Attributes:
+    head (Song): The first song in the playlist.
+    tail (Song): The last song in the playlist.
+    size (int): The number of songs in the playlist.
+
+    Methods:
+    push_song(self, song): Adds a song to the beginning of the playlist.
+    append_song(self, song): Adds a song to the end of the playlist.
+    next_song(self): Returns the URL of the next song in the playlist.
+    previous_song(self): Returns the URL of the previous song in the playlist.
+    print_playlist(self): Returns a string representation of the playlist.
+    """
+
     def __init__(self):
         self.head = None
         self.tail = None
@@ -34,6 +50,12 @@ class Playlist:
         logger.debug("initializing playlist")
 
     def push_song(self, song):
+        """
+        Adds a song to the beginning of the playlist.
+
+        Parameters:
+        song (Song): The song to be added.
+        """
         song.next = self.head
         if self.head is not None:
             self.head.prev = song
@@ -42,6 +64,12 @@ class Playlist:
         logger.debug("Song pushed")
 
     def append_song(self, song):
+        """
+        Adds a song to the end of the playlist.
+
+        Parameters:
+        song (Song): The song to be added.
+        """
         song.next = None
         if self.head is None:
             song.prev = None
@@ -58,6 +86,12 @@ class Playlist:
         logger.debug("Add song to playlist")
 
     def next_song(self):
+        """
+        Returns the URL of the next song in the playlist.
+
+        Returns:
+        str: The URL of the next song in the playlist.
+        """
         if self.head.next is None:
             logger.debug("There is no next song in the playlist")
             return None
@@ -66,6 +100,12 @@ class Playlist:
         return self.head.url
 
     def previous_song(self):
+        """
+        Returns the URL of the previous song in the playlist.
+
+        Returns:
+        str: The URL of the previous song in the playlist.
+        """
         if self.head.prev is None:
             logger.debug("Thre is no previous song in the playlist")
             return None
@@ -74,6 +114,12 @@ class Playlist:
         return self.head.url
 
     def print_playlist(self):
+        """
+        Returns a string representation of the playlist.
+
+        Returns:
+        str: A string representation of the playlist.
+        """
         ss = StringIO()
         ss.write("\tPlaylist:\n")
         while self.head is not None:
@@ -152,8 +198,6 @@ class Music_player(commands.Cog):
         Returns:
             bool: Returns True if the song was successfully added to the playlist. Returns False otherwise.
 
-        Raises:
-            None
         """
 
         # Create a song object from the given URL
