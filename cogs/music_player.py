@@ -13,7 +13,7 @@ YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
 # add to playlist with another thread
 
 
-class Song():
+class Song:
     def __init__(self, title=None, url=None, duration=None):
         self.title = title
         self.url = url
@@ -22,7 +22,7 @@ class Song():
         self.prev = None
 
 
-class Playlist():
+class Playlist:
     def __init__(self):
         self.head = None
         self.tail = None
@@ -42,13 +42,16 @@ class Playlist():
         if self.head is None:
             song.prev = None
             self.head = song
+            logger.debug("Add first song to playlist")
+            self.size = 1
             return
         last = self.head
-        while (last.next is not None):
+        while last.next is not None:
             last = last.next
         last.next = song
         song.prev = last
-        logger.debug("Song appended")
+        self.size += 1
+        logger.debug("Add song to playlist")
 
     def next_song(self):
         if self.head.next is None:
@@ -57,11 +60,6 @@ class Playlist():
         self.head = self.head.next
         logger.debug("Changin head to next song in the playlist")
         return self.head.url
-
-    def get_next_song_title(self):
-        if self.head.next is None:
-            return None
-        return self.head.next.title
 
     def previous_song(self):
         if self.head.prev is None:
@@ -73,15 +71,15 @@ class Playlist():
 
     def print_playlist(self, head):
         ss = StringIO()
-        ss.write('\tPlaylist:\n')
-        while (head is not None):
-            ss.write(f'{head.title}\n')
+        ss.write("\tPlaylist:\n")
+        while head is not None:
+            ss.write(f"{head.title}\n")
             last = head
             head = head.next
         return ss.getvalue()
 
 
-class Youtube_downloader():
+class Youtube_downloader:
 
     def __init__(self):
         self.downloader = yt_dlp.YoutubeDL(YDL_OPTIONS)
@@ -103,15 +101,13 @@ class Music_player(commands.Cog):
         self.bot = bot
         self.playlist = None
         self.audio_source = None
-        self.song_changer_task = None
         self.is_loop = False
 
     async def exit(self, ctx):
         self.is_loop = False
-        self.song_changer_task = None
         self.playlist = None
         self.audio_source.cleanup()
-        logger.debug("There are no more songs, processing to exit.")
+        logger.debug("It's time to stop.")
         await ctx.send("My job here is done!")
         await ctx.guild.voice_client.disconnect()
         logger.debug("Disconnected from voice client")
@@ -123,134 +119,130 @@ class Music_player(commands.Cog):
 
     async def play_song(self, ctx, song):
         logger.debug("Trying to play song")
-        if song is not None:
-            await ctx.send(f"Now playing: {self.playlist.head.title}")
-            self.audio_source = discord.FFmpegPCMAudio(
-                song,
-                **FFMPEG_OPTIONS)
-            ctx.voice_client.play(self.audio_source, after=lambda e: self.play_next_song(ctx))
-            logger.debug("Audio stream started")
+        await ctx.send(f"Now playing: {self.playlist.head.title}")
+        self.audio_source = discord.FFmpegPCMAudio(
+            song,
+            **FFMPEG_OPTIONS
+        )
+        ctx.voice_client.play(self.audio_source, after=lambda e: self.play_next_song(ctx))
+        logger.debug("Audio stream started")
 
     def play_next_song(self, ctx):
-        if self.playlist is None: return
+        if self.playlist is None:
+            return
         logger.debug("Changing song: check if loop state is active")
         if self.is_loop:
             logger.debug("loop state is active, playing same song")
-            self.song_changer_task = self.bot.loop.create_task(self.play_song(ctx, self.playlist.head.url))
+            self.bot.loop.create_task(self.play_song(ctx, self.playlist.head.url))
+        elif self.playlist.next_song() is not None:
+            logger.debug("no loop state, changing song")
+            self.bot.loop.create_task(self.play_song(ctx, self.playlist.head.url))
         else:
-            if self.playlist.next_song() is not None:
-                logger.debug("no loop state, changing song")
-                self.song_changer_task = self.bot.loop.create_task(self.play_song(ctx, self.playlist.head.url))
-            else:
-                self.bot.loop.create_task(self.exit(ctx))
+            self.bot.loop.create_task(self.exit(ctx))
 
     @commands.command()
     async def play(self, ctx, url):
         logger.debug(f"!play command is executing by {ctx.author}")
-        if ctx.author.voice is None:
-            await ctx.send("You must be in a voice channel to play music.")
+        author_voice_client = ctx.author.voice
+        bot_voice_clients = self.bot.voice_clients
+
+        if not author_voice_client:
             logger.debug(f"can't execute command, {ctx.author} not in a voice channel")
-            return
+            return await ctx.send("You must be in a voice channel to play music.")
 
-        if self.bot.voice_clients:
-            if ctx.author.voice.channel != self.bot.voice_clients[0].channel:
-                logger.debug(f"can't execute command, bot is already playing in different channel")
-                await ctx.send("Bot is already playing music in another channel.")
-                return
+        if bot_voice_clients and author_voice_client.channel != bot_voice_clients[0].channel:
+            logger.debug(f"can't execute command, bot is already playing in different channel")
+            return await ctx.send("Bot is already playing music in another channel.")
 
-        if ctx.guild.voice_client: #if already connected to a voice channel, add song to playlist
-            await self.add_song_to_playlist(ctx, url) 
-        else: #or connect to voice channel and start playing first song
-            await ctx.author.voice.channel.connect()
+        if ctx.guild.voice_client:  # if already connected to a voice channel, add song to playlist
+            await self.add_song_to_playlist(ctx, url)
+        else:  # connect to voice channel and start playing first song
+            await author_voice_client.channel.connect()
             self.playlist = Playlist()
-            song = Youtube_downloader().create_song(url)
-            self.playlist.push_song(song)
+            await self.add_song_to_playlist(ctx, url)
             await self.play_song(ctx, self.playlist.head.url)
 
     @commands.command()
     async def loop(self, ctx):
         logger.debug(f"!loop command is executing by {ctx.author}")
-        if not self.is_loop:
-            self.is_loop = True
+        self.is_loop = not self.is_loop
+        if self.is_loop:
             logger.debug("Loop state: ON")
-            await ctx.send("Music is now looping. To disable loop mode send '!loop'")
+            await ctx.send("Music is now looping. To disable loop mode, send '!loop'")
         else:
-            self.is_loop = False
             logger.debug("Loop state: OFF")
             await ctx.send("Music is no longer looping.")
 
     @commands.command()
-    async def skip(self, ctx):  # todo: skip in loop state
+    async def skip(self, ctx):
         logger.debug(f"!skip command is executing by {ctx.author}")
         voice_client = ctx.voice_client
+
         if not voice_client:
             logger.debug("can't skip, not in voice channel")
-            await ctx.send("I'm not in voice channel")
-            return
+            return await ctx.send("I'm not in a voice channel.")
 
         if self.is_loop:
             logger.debug("can't skip in loop state")
-            await ctx.send("Can't skip in loop state")
-            return
+            return await ctx.send("Can't skip in loop state.")
 
         song = self.playlist.next_song()
-        if song is not None:
-            logger.debug('cleanup audio source')
-            ctx.voice_client.pause()
-            self.audio_source.cleanup()
-            await self.play_song(ctx, song)
-        else:
-            logger.debug("can't skip, there are no next song")
-            await ctx.send("No next song.")
+
+        if not song:
+            logger.debug("can't skip, there are no next songs")
+            return await ctx.send("No next song.")
+
+        logger.debug('cleaning up audio source')
+        voice_client.pause()
+        self.audio_source.cleanup()
+        await self.play_song(ctx, song)
 
     @commands.command()
-    async def prev(self, ctx):  # todo skip in loop
+    async def prev(self, ctx):
         logger.debug(f"!prev command is executing by {ctx.author}")
         voice_client = ctx.voice_client
+
         if not voice_client:
             logger.debug("can't prev, not in voice channel")
-            await ctx.send("I'm not in voice channel")
-            return
+            return await ctx.send("I'm not in a voice channel.")
 
         if self.is_loop:
             logger.debug("can't prev in loop state")
-            await ctx.send("Can't prev in loop state")
-            return
+            return await ctx.send("Can't prev in loop state.")
 
         song = self.playlist.previous_song()
-        if song is not None:
 
-            if self.song_changer_task is not None:
-                self.song_changer_task.cancel()
-                logger.debug("cancel changing task")
+        if not song:
+            logger.debug("can't prev, there are no previous songs")
+            return await ctx.send("No previous song.")
 
-            ctx.voice_client.pause()
-            await self.play_song(ctx, song)
-        else:
-            logger.debug("can't prev, there are no previous song")
-            await ctx.send("No previous song.")
+        ctx.voice_client.pause()
+        self.audio_source.cleanup()
+        await self.play_song(ctx, song)
 
     @commands.command()
     async def pause(self, ctx):
         logger.debug(f"!pause command is executing by {ctx.author}")
         voice_client = ctx.voice_client
-        if voice_client and voice_client.is_playing():
-            voice_client.pause()
-            logger.debug("audio source paused")
-        else:
-            logger.debug(f"can't pause")
-            await ctx.send("I'm not currently playing any audio.")
+
+        if not voice_client or not voice_client.is_playing():
+            logger.debug("can't pause")
+            return await ctx.send("I'm not currently playing any audio.")
+
+        voice_client.pause()
+        logger.debug("audio source paused")
 
     @commands.command()
     async def resume(self, ctx):
         logger.debug(f"!resume command is executing by {ctx.author}")
         voice_client = ctx.voice_client
-        if voice_client and voice_client.is_paused():
-            voice_client.resume()
-            logger.debug("audio source resumed")
-        else:
+
+        if not voice_client or not voice_client.is_paused():
             logger.debug("can't resume")
-            await ctx.send("I'm not currently paused.")
+            return await ctx.send("I'm not currently paused.")
+
+        voice_client.resume()
+        logger.debug("audio source resumed")
 
     @commands.command()
     async def playlist(self, ctx):
@@ -261,11 +253,12 @@ class Music_player(commands.Cog):
     async def stop(self, ctx):
         logger.debug(f"!stop command is executing by {ctx.author}")
         voice_client = ctx.voice_client
+
         if voice_client:
             logger.debug("cleaning up")
             await self.exit(ctx)
         else:
-            await ctx.send("I'm not currently in voice channel.")
+            await ctx.send("I'm not currently in a voice channel.")
 
 
 async def setup(bot):
