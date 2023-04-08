@@ -1,6 +1,8 @@
 import asyncio
+import re
 from io import StringIO
 
+import aiohttp
 import discord
 import yt_dlp
 from discord.ext import commands
@@ -10,7 +12,9 @@ FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconne
 YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
 
 # add option for playing youtube playlists
-# add to playlist with another thread
+# add to playlist with another thre
+# next/prev in song and head/teil in playlist maybe use Optional or Union
+# add error handling
 
 
 class Song:
@@ -69,13 +73,13 @@ class Playlist:
         logger.debug("Changin head to previous song in the playlist")
         return self.head.url
 
-    def print_playlist(self, head):
+    def print_playlist(self):
         ss = StringIO()
         ss.write("\tPlaylist:\n")
-        while head is not None:
-            ss.write(f"{head.title}\n")
-            last = head
-            head = head.next
+        while self.head is not None:
+            ss.write(f"{self.head.title}\n")
+            last = self.head
+            self.head = self.head.next
         return ss.getvalue()
 
 
@@ -85,8 +89,27 @@ class Youtube_downloader:
         self.downloader = yt_dlp.YoutubeDL(YDL_OPTIONS)
         logger.debug('init downloader')
 
+    def is_youtube_url(self, url: str):
+        return re.search(r"^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\?v=)([^#\&\?]*).*", url)
+
+    async def is_valid_youtube_url(self, url: str):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                text = await response.text()
+                is_valid = not ("Video unavailable" in text)
+                return is_valid
+
+    def is_valid_url(self, url):
+        if self.is_youtube_url(url) and asyncio.create_task(self.is_valid_youtube_url(url)):
+            return True
+        return False
+
     def create_song(self, url):
-        song_info = self.downloader.extract_info(url, download=False)
+        try:
+            song_info = self.downloader.extract_info(url, download=False)
+        except Exception as e:
+            logger.error(f"Can't extract info from {url}\n {e}")
+            return None
         new_song = Song()
         new_song.title = song_info.get('title')
         new_song.url = song_info.get('url')
@@ -102,20 +125,48 @@ class Music_player(commands.Cog):
         self.playlist = None
         self.audio_source = None
         self.is_loop = False
+        self.downloader = Youtube_downloader()
 
-    async def exit(self, ctx):
+    def resetting(self):
         self.is_loop = False
         self.playlist = None
         self.audio_source.cleanup()
+        self.audio_source = None
+        logger.debug("")
+
+    async def exit(self, ctx):
+        self.resetting()
         logger.debug("It's time to stop.")
         await ctx.send("My job here is done!")
         await ctx.guild.voice_client.disconnect()
         logger.debug("Disconnected from voice client")
 
     async def add_song_to_playlist(self, ctx, url):
-        song = Youtube_downloader().create_song(url)
-        self.playlist.append_song(song)
-        await ctx.send(f"Add {song.title} to playlist")
+        """
+        Adds a song to the music player's playlist.
+
+        Parameters:
+            ctx (discord.ext.commands.Context): The context of the command.
+            url (str): The URL of the song to be added.
+
+        Returns:
+            bool: Returns True if the song was successfully added to the playlist. Returns False otherwise.
+
+        Raises:
+            None
+        """
+
+        # Create a song object from the given URL
+        song = self.downloader.create_song(url)
+
+        # If the song object is not None, append it to the playlist
+        if song is not None:
+            self.playlist.append_song(song)
+            await ctx.send(f"Added {song.title} to the playlist.")
+            return True
+
+        # If the song object is None, return False
+        return False
 
     async def play_song(self, ctx, song):
         logger.debug("Trying to play song")
@@ -143,6 +194,10 @@ class Music_player(commands.Cog):
     @commands.command()
     async def play(self, ctx, url):
         logger.debug(f"!play command is executing by {ctx.author}")
+
+        if not self.downloader.is_valid_url(url):
+            return await ctx.send("Invalid URL")
+
         author_voice_client = ctx.author.voice
         bot_voice_clients = self.bot.voice_clients
 
@@ -155,11 +210,13 @@ class Music_player(commands.Cog):
             return await ctx.send("Bot is already playing music in another channel.")
 
         if ctx.guild.voice_client:  # if already connected to a voice channel, add song to playlist
-            await self.add_song_to_playlist(ctx, url)
+            if not await self.add_song_to_playlist(ctx, url):
+                return await ctx.send("Can't add song to playlist, please check your url")
         else:  # connect to voice channel and start playing first song
-            await author_voice_client.channel.connect()
             self.playlist = Playlist()
-            await self.add_song_to_playlist(ctx, url)
+            if not await self.add_song_to_playlist(ctx, url):
+                return await ctx.send("Can't add song to playlist, please check your url")
+            await author_voice_client.channel.connect()
             await self.play_song(ctx, self.playlist.head.url)
 
     @commands.command()
@@ -247,7 +304,7 @@ class Music_player(commands.Cog):
     @commands.command()
     async def playlist(self, ctx):
         logger.debug(f"!playlist command is executing by {ctx.author}")
-        await ctx.send(self.playlist.print_playlist(self.playlist.head))
+        await ctx.send(self.playlist.print_playlist())
 
     @commands.command()
     async def stop(self, ctx):
