@@ -1,5 +1,7 @@
 import asyncio
+import queue
 import re
+import threading
 from io import StringIO
 
 import aiohttp
@@ -12,7 +14,6 @@ FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconne
 YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
 
 # add option for playing youtube playlists
-# add to playlist with another thre
 # next/prev in song and head/teil in playlist maybe use Optional or Union
 # add error handling
 
@@ -150,18 +151,34 @@ class Youtube_downloader:
             return True
         return False
 
-    def create_song(self, url):
-        try:
-            song_info = self.downloader.extract_info(url, download=False)
-        except Exception as e:
-            logger.error(f"Can't extract info from {url}\n {e}")
-            return None
-        new_song = Song()
-        new_song.title = song_info.get('title')
-        new_song.url = song_info.get('url')
-        new_song.duration = song_info.get('duration')
-        logger.debug(f'New song: {new_song.title} with duration: {new_song.duration} are created')
-        return new_song
+    def create_song(self, url: str, result_queue: Queue):
+        """
+        Downloads and extracts information about a song from a given URL, creates a Song object and adds it to the result queue.
+
+        Args:
+            url (str): The URL of the song to be downloaded and extracted.
+            result_queue (Queue): The queue where the Song object will be added.
+
+        Example:
+            create_song('https://www.youtube.com/watch?v=dQw4w9WgXcQ', my_queue)
+        """
+
+        def worker():
+            try:
+                song_info = self.downloader.extract_info(url, download=False)
+            except Exception as e:
+                logger.error(f"Can't extract info from {url}\n {e}")
+                return None
+            new_song = Song()
+            new_song.title = song_info.get('title')
+            new_song.url = song_info.get('url')
+            new_song.duration = song_info.get('duration')
+            logger.debug(f'New song: {new_song.title} with duration: {new_song.duration} are created')
+
+            result_queue.put(new_song)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
 
 
 class Music_player(commands.Cog):
@@ -187,7 +204,7 @@ class Music_player(commands.Cog):
         await ctx.guild.voice_client.disconnect()
         logger.debug("Disconnected from voice client")
 
-    async def add_song_to_playlist(self, ctx, url):
+    async def add_song_to_playlist(self, ctx, url: str):
         """
         Adds a song to the music player's playlist.
 
@@ -201,7 +218,11 @@ class Music_player(commands.Cog):
         """
 
         # Create a song object from the given URL
-        song = self.downloader.create_song(url)
+        result_queue = queue.Queue()
+        self.downloader.create_song(url, result_queue)
+        song = result_queue.get()
+
+        self.downloader.create_song()
 
         # If the song object is not None, append it to the playlist
         if song is not None:
