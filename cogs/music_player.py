@@ -1,8 +1,8 @@
 import asyncio
-import queue
 import re
 import threading
 from io import StringIO
+from queue import Queue
 
 import aiohttp
 import discord
@@ -14,7 +14,6 @@ FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconne
 YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
 
 # add option for playing youtube playlists
-# next/prev in song and head/teil in playlist maybe use Optional or Union
 # add error handling
 
 
@@ -123,10 +122,11 @@ class Playlist:
         """
         ss = StringIO()
         ss.write("\tPlaylist:\n")
-        while self.head is not None:
-            ss.write(f"{self.head.title}\n")
-            last = self.head
-            self.head = self.head.next
+        pointer = self.head
+        while pointer is not None:
+            ss.write(f"{pointer.title}\n")
+            last = pointer
+            pointer = pointer.next
         return ss.getvalue()
 
 
@@ -218,11 +218,10 @@ class Music_player(commands.Cog):
         """
 
         # Create a song object from the given URL
-        result_queue = queue.Queue()
+        result_queue = Queue()
         self.downloader.create_song(url, result_queue)
         song = result_queue.get()
 
-        self.downloader.create_song()
 
         # If the song object is not None, append it to the playlist
         if song is not None:
