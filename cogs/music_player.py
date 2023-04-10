@@ -45,7 +45,7 @@ class Music_player(commands.Cog):
     @play.error
     async def play_error(self, ctx, error):
         if isinstance(error, commands.errors.MissingRequiredArgument):
-            await ctx.send('You did not provide a required argument. The correct syntax is: >play <youtube_url>')
+            await ctx.send(f"You did not provide a required argument. The correct syntax is: {config.BOT_PREFIX}play <youtube_url>")
 
     @commands.command(name="loop", aliases=['l', 'repeat'],
                       brief='Loop the currently playing song.',
