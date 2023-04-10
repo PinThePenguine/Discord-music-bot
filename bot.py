@@ -59,6 +59,12 @@ def main():
 
     bot = commands.Bot(command_prefix='>', intents=discord.Intents.all())
 
+    @bot.event
+    async def on_command_error(ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            seconds = error.retry_after
+            await ctx.send(f"This command is on cooldown. Try again in {seconds:.2f} seconds.")
+
     asyncio.run(load_cogs(bot))
 
     try:
