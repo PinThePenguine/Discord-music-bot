@@ -1,18 +1,21 @@
 class Song:
-    """
-    Represents a song with a title, URL, and duration.
+    """Represents a single song.
+
+    Attributes:
+        title (str): The title of the song.
+        url (str): The URL of the song.
+        duration (int): The duration of the song in seconds.
+        next (Song): The next song in the playlist.
+        prev (Song): The previous song in the playlist.
     """
 
     def __init__(self, title=None, url=None, duration=None):
-        """
-        Initializes a new instance of the Song class.
+        """Initializes a new instance of the Song class.
 
-        :param title: The title of the song.
-        :type title: str
-        :param url: The URL of the song.
-        :type url: str
-        :param duration: The duration of the song in seconds.
-        :type duration: int
+        Args:
+            title (str): The title of the song.
+            url (str): The URL of the song.
+            duration (int): The duration of the song in seconds.
         """
         self.title = title
         self.url = url

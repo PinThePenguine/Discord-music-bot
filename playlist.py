@@ -10,30 +10,31 @@ class Playlist:
     A doubly linked list implementation to store and manage a playlist of songs.
 
     Attributes:
-    head (Song): The first song in the playlist.
-    tail (Song): The last song in the playlist.
-    size (int): The number of songs in the playlist.
+        head (Song): The first song in the playlist.
+        tail (Song): The last song in the playlist.
+        size (int): The number of songs in the playlist.
 
     Methods:
-    push_song(self, song): Adds a song to the beginning of the playlist.
-    append_song(self, song): Adds a song to the end of the playlist.
-    next_song(self): Returns the URL of the next song in the playlist.
-    previous_song(self): Returns the URL of the previous song in the playlist.
-    print_playlist(self): Returns a string representation of the playlist.
+        push_song(self, song): Adds a song to the beginning of the playlist.
+        append_song(self, song): Adds a song to the end of the playlist.
+        next_song(self): Returns the URL of the next song in the playlist.
+        previous_song(self): Returns the URL of the previous song in the playlist.
+        print_playlist(self): Returns a string representation of the playlist.
     """
 
     def __init__(self):
+        """Initializes a new instance of the Playlist class."""
         self.head = None
         self.tail = None
         self.size = 0
         logger.debug("initializing playlist")
 
-    def push_song(self, song):
+    def push_song(self, song: Song):
         """
         Adds a song to the beginning of the playlist.
 
-        Parameters:
-        song (Song): The song to be added.
+        Args:
+            song (Song): The song to be added.
         """
         song.next = self.head
         if self.head is not None:
@@ -42,12 +43,12 @@ class Playlist:
         self.size += 1
         logger.debug("Song pushed")
 
-    def append_song(self, song):
+    def append_song(self, song: Song):
         """
         Adds a song to the end of the playlist.
 
-        Parameters:
-        song (Song): The song to be added.
+        Args:
+            song (Song): The song to be added.
         """
         song.next = None
         if self.head is None:
@@ -66,38 +67,38 @@ class Playlist:
 
     def next_song(self):
         """
-        Returns the URL of the next song in the playlist.
+        Returns the next song in the playlist.
 
         Returns:
-        str: The URL of the next song in the playlist.
+            song (Song): The next song in the playlist.
         """
         if self.head.next is None:
             logger.debug("There is no next song in the playlist")
             return None
         self.head = self.head.next
-        logger.debug("Changin head to next song in the playlist")
-        return self.head.url
+        logger.debug("Changing head to next song in the playlist")
+        return self.head
 
     def previous_song(self):
         """
-        Returns the URL of the previous song in the playlist.
+        Returns the previous song in the playlist.
 
         Returns:
-        str: The URL of the previous song in the playlist.
+            song (Song): The previous song in the playlist.
         """
         if self.head.prev is None:
-            logger.debug("Thre is no previous song in the playlist")
+            logger.debug("There is no previous song in the playlist")
             return None
         self.head = self.head.prev
-        logger.debug("Changin head to previous song in the playlist")
-        return self.head.url
+        logger.debug("Changing head to previous song in the playlist")
+        return self.head
 
     def print_playlist(self):
         """
         Returns a string representation of the playlist.
 
         Returns:
-        str: A string representation of the playlist.
+            str: A string representation of the playlist.
         """
         ss = StringIO()
         ss.write("\tPlaylist:\n")

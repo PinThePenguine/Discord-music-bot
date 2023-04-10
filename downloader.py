@@ -12,24 +12,65 @@ YDL_OPTIONS = {'format': 'bestaudio/best'}
 
 
 class Youtube_downloader:
+    """
+    A class for downloading and extracting information about songs or playlists from YouTube URLs.
+    Attributes:
+    downloader (YoutubeDL): A YoutubeDL object for downloading and extracting information.
+
+    Methods:
+        is_youtube_url(url): Determines whether the given URL is a YouTube URL.
+        is_valid_youtube_url(url): Determines whether the given YouTube URL is valid and the video is not unavailable.
+        is_valid_url(url): Determines whether the given URL is a valid YouTube URL and the video is not unavailable.
+        create_song(url, result_queue, is_playlist=False): Downloads and extracts information about a song or playlist from the given URL, creates Song objects, and adds them to the result queue.
+    """
 
     def __init__(self):
+        """
+        Initializes the Youtube_downloader class and creates a YoutubeDL object for downloading and extracting information.
+        """
         self.downloader = yt_dlp.YoutubeDL(YDL_OPTIONS)
         logger.debug('init downloader')
 
-    def is_youtube_url(self, url: str):
+    def is_youtube_url(self, url: str) -> bool:
+        """
+        Determines whether the given URL is a valid YouTube URL.
+
+        Args:
+            url (str): The URL to be checked.
+
+        Returns:
+            bool: True if the URL is a valid YouTube URL, False otherwise.
+        """
         if re.search(r"^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\?v=)([^#\&\?]*).*", url) or "https://www.youtube.com/playlist?list=" in url:
             return True
         return False
 
-    async def is_valid_youtube_url(self, url: str):
+    async def is_valid_youtube_url(self, url: str) -> bool:
+        """
+        Determines whether the given YouTube URL is valid and the video is not unavailable.
+
+        Args:
+            url (str): The YouTube URL to be checked.
+
+        Returns:
+            bool: True if the YouTube URL is valid and the video is not unavailable, False otherwise.
+        """
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 text = await response.text()
                 is_valid = not ("Video unavailable" in text)
                 return is_valid
 
-    def is_valid_url(self, url: str):
+    def is_valid_url(self, url: str) -> bool:
+        """
+        Determines whether the given URL is a valid YouTube URL and the video is not unavailable.
+
+        Args:
+            url (str): The URL to be checked.
+
+        Returns:
+            bool: True if the URL is a valid YouTube URL and the video is not unavailable, False otherwise.
+        """
         if self.is_youtube_url(url) and asyncio.create_task(self.is_valid_youtube_url(url)):
             return True
         return False
@@ -47,7 +88,6 @@ class Youtube_downloader:
             create_song('https://www.youtube.com/watch?v=dQw4w9WgXcQ', my_queue)
             create_song('https://www.youtube.com/playlist?list=PLw-VjHDlEOguGHBf1BV-XS4pmt9wR1cBC', my_queue, is_playlist=True)
         """
-
         try:
             if is_playlist:
                 playlist_info = self.downloader.extract_info(url, download=False, process=False)

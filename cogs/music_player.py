@@ -35,7 +35,7 @@ class Music_player(commands.Cog):
             self.controller.playlist = Playlist()
             await self.controller.add_to_playlist(ctx, url)
             await author_voice_client.channel.connect()
-            await self.controller.play_song(ctx, self.controller.playlist.head.url)
+            await self.controller.play_song(ctx, self.controller.playlist.head)
 
     @commands.command()
     async def loop(self, ctx):
