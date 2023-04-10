@@ -1,9 +1,10 @@
 import asyncio
+import queue
 import re
 import threading
 from io import StringIO
 from queue import Queue
-
+import time
 import aiohttp
 import discord
 import yt_dlp
@@ -11,9 +12,8 @@ from discord.ext import commands
 from loguru import logger
 
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
+YDL_OPTIONS = {'format': 'bestaudio/best'}
 
-# add option for playing youtube playlists
 # add error handling
 
 
@@ -74,7 +74,7 @@ class Playlist:
         if self.head is None:
             song.prev = None
             self.head = song
-            logger.debug("Add first song to playlist")
+            logger.debug(f"Add first song {song.title} to playlist")
             self.size = 1
             return
         last = self.head
@@ -83,7 +83,7 @@ class Playlist:
         last.next = song
         song.prev = last
         self.size += 1
-        logger.debug("Add song to playlist")
+        logger.debug(f"Add {song.title} to playlist")
 
     def next_song(self):
         """
@@ -137,7 +137,9 @@ class Youtube_downloader:
         logger.debug('init downloader')
 
     def is_youtube_url(self, url: str):
-        return re.search(r"^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\?v=)([^#\&\?]*).*", url)
+        if re.search(r"^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\?v=)([^#\&\?]*).*", url) or "https://www.youtube.com/playlist?list=" in url:
+            return True
+        return False
 
     async def is_valid_youtube_url(self, url: str):
         async with aiohttp.ClientSession() as session:
@@ -151,34 +153,46 @@ class Youtube_downloader:
             return True
         return False
 
-    def create_song(self, url: str, result_queue: Queue):
+    def create_song(self, url: str, result_queue: Queue, is_playlist=False):
         """
-        Downloads and extracts information about a song from a given URL, creates a Song object and adds it to the result queue.
+        Downloads and extracts information about a song or playlist from a given URL, creates Song objects and adds them to the result queue.
 
         Args:
-            url (str): The URL of the song to be downloaded and extracted.
-            result_queue (Queue): The queue where the Song object will be added.
+            url (str): The URL of the song or playlist to be downloaded and extracted.
+            result_queue (Queue): The queue where the Song objects will be added.
+            is_playlist (bool, optional): Indicates whether the URL is for a playlist or not. Defaults to False.
 
         Example:
             create_song('https://www.youtube.com/watch?v=dQw4w9WgXcQ', my_queue)
+            create_song('https://www.youtube.com/playlist?list=PLw-VjHDlEOguGHBf1BV-XS4pmt9wR1cBC', my_queue, is_playlist=True)
         """
 
-        def worker():
-            try:
+        try:
+            if is_playlist:
+                playlist_info = self.downloader.extract_info(url, download=False, process=False)
+                if 'entries' not in playlist_info:
+                    logger.error("No entries found in the playlist")
+                    return None
+                for song in playlist_info['entries']:
+                    song_info = self.downloader.extract_info(song.get('url'), download=False)
+                    new_song = Song()
+                    new_song.title = song_info.get('title')
+                    new_song.url = song_info.get('url')
+                    new_song.duration = song_info.get('duration')
+                    logger.debug(f'New song: {new_song.title} with duration: {new_song.duration} are created')
+                    result_queue.put(new_song)
+            else:
                 song_info = self.downloader.extract_info(url, download=False)
-            except Exception as e:
-                logger.error(f"Can't extract info from {url}\n {e}")
-                return None
-            new_song = Song()
-            new_song.title = song_info.get('title')
-            new_song.url = song_info.get('url')
-            new_song.duration = song_info.get('duration')
-            logger.debug(f'New song: {new_song.title} with duration: {new_song.duration} are created')
+                new_song = Song()
+                new_song.title = song_info.get('title')
+                new_song.url = song_info.get('url')
+                new_song.duration = song_info.get('duration')
+                logger.debug(f'New song: {new_song.title} with duration: {new_song.duration} are created')
+                result_queue.put(new_song)
 
-            result_queue.put(new_song)
-
-        thread = threading.Thread(target=worker)
-        thread.start()
+        except Exception as e:
+            logger.error(f"Can't extract info from {url}\n {e}")
+            return None
 
 
 class Music_player(commands.Cog):
@@ -204,6 +218,31 @@ class Music_player(commands.Cog):
         await ctx.guild.voice_client.disconnect()
         logger.debug("Disconnected from voice client")
 
+    async def add_to_playlist(self, ctx, url):
+        if "playlist" in url:
+            await ctx.send("Adding playlist, it may take some time")
+            if not await self.add_playlist_to_playlist(ctx, url):
+                return await ctx.send("Can't add playlist, something went wrong :(")
+        else:
+            if not await self.add_song_to_playlist(ctx, url):
+                return await ctx.send("Can't add song to playlist, please check your url")
+
+    async def add_playlist_to_playlist(self, ctx, url: str):
+        logger.debug("Add playlist")
+        try:
+            result_queue = Queue()
+            thread = threading.Thread(target=self.downloader.create_song, args=(url, result_queue, True))
+            thread.start()
+            thread.join()
+            while not result_queue.empty():
+                song = result_queue.get()
+                self.playlist.append_song(song)
+        except Exception as e:
+            logger.error(f"Can't add playlist to {url}\n {e}")
+            return False
+        await ctx.send("Playlist added successfully")
+        return True
+
     async def add_song_to_playlist(self, ctx, url: str):
         """
         Adds a song to the music player's playlist.
@@ -219,9 +258,10 @@ class Music_player(commands.Cog):
 
         # Create a song object from the given URL
         result_queue = Queue()
-        self.downloader.create_song(url, result_queue)
+        thread = threading.Thread(target=self.downloader.create_song, args=(url, result_queue))
+        thread.start()
+        thread.join()
         song = result_queue.get()
-
 
         # If the song object is not None, append it to the playlist
         if song is not None:
@@ -259,9 +299,6 @@ class Music_player(commands.Cog):
     async def play(self, ctx, url):
         logger.debug(f"!play command is executing by {ctx.author}")
 
-        if not self.downloader.is_valid_url(url):
-            return await ctx.send("Invalid URL")
-
         author_voice_client = ctx.author.voice
         bot_voice_clients = self.bot.voice_clients
 
@@ -273,13 +310,14 @@ class Music_player(commands.Cog):
             logger.debug(f"can't execute command, bot is already playing in different channel")
             return await ctx.send("Bot is already playing music in another channel.")
 
+        if not self.downloader.is_valid_url(url):
+            return await ctx.send("Invalid URL")
+
         if ctx.guild.voice_client:  # if already connected to a voice channel, add song to playlist
-            if not await self.add_song_to_playlist(ctx, url):
-                return await ctx.send("Can't add song to playlist, please check your url")
+            await self.add_to_playlist(ctx, url)
         else:  # connect to voice channel and start playing first song
             self.playlist = Playlist()
-            if not await self.add_song_to_playlist(ctx, url):
-                return await ctx.send("Can't add song to playlist, please check your url")
+            await self.add_to_playlist(ctx, url)
             await author_voice_client.channel.connect()
             await self.play_song(ctx, self.playlist.head.url)
 
