@@ -195,7 +195,7 @@ class Youtube_downloader:
             return None
 
 
-class Music_player(commands.Cog):
+class Audioplayer_controller():
 
     def __init__(self, bot):
         self.bot = bot
@@ -209,7 +209,6 @@ class Music_player(commands.Cog):
         self.playlist = None
         self.audio_source.cleanup()
         self.audio_source = None
-        logger.debug("")
 
     async def exit(self, ctx):
         self.resetting()
@@ -295,6 +294,13 @@ class Music_player(commands.Cog):
         else:
             self.bot.loop.create_task(self.exit(ctx))
 
+
+class Music_player(commands.Cog):
+
+    def __init__(self, bot):
+        self.bot = bot
+        self.controller = Audioplayer_controller(bot)
+
     @commands.command()
     async def play(self, ctx, url):
         logger.debug(f"!play command is executing by {ctx.author}")
@@ -310,22 +316,22 @@ class Music_player(commands.Cog):
             logger.debug(f"can't execute command, bot is already playing in different channel")
             return await ctx.send("Bot is already playing music in another channel.")
 
-        if not self.downloader.is_valid_url(url):
+        if not self.controller.downloader.is_valid_url(url):
             return await ctx.send("Invalid URL")
 
         if ctx.guild.voice_client:  # if already connected to a voice channel, add song to playlist
-            await self.add_to_playlist(ctx, url)
+            await self.controller.add_to_playlist(ctx, url)
         else:  # connect to voice channel and start playing first song
-            self.playlist = Playlist()
-            await self.add_to_playlist(ctx, url)
+            self.controller.playlist = Playlist()
+            await self.controller.add_to_playlist(ctx, url)
             await author_voice_client.channel.connect()
-            await self.play_song(ctx, self.playlist.head.url)
+            await self.controller.play_song(ctx, self.controller.playlist.head.url)
 
     @commands.command()
     async def loop(self, ctx):
         logger.debug(f"!loop command is executing by {ctx.author}")
-        self.is_loop = not self.is_loop
-        if self.is_loop:
+        self.controller.is_loop = not self.controller.is_loop
+        if self.controller.is_loop:
             logger.debug("Loop state: ON")
             await ctx.send("Music is now looping. To disable loop mode, send '!loop'")
         else:
@@ -341,11 +347,11 @@ class Music_player(commands.Cog):
             logger.debug("can't skip, not in voice channel")
             return await ctx.send("I'm not in a voice channel.")
 
-        if self.is_loop:
+        if self.controller.is_loop:
             logger.debug("can't skip in loop state")
             return await ctx.send("Can't skip in loop state.")
 
-        song = self.playlist.next_song()
+        song = self.controller.playlist.next_song()
 
         if not song:
             logger.debug("can't skip, there are no next songs")
@@ -353,8 +359,8 @@ class Music_player(commands.Cog):
 
         logger.debug('cleaning up audio source')
         voice_client.pause()
-        self.audio_source.cleanup()
-        await self.play_song(ctx, song)
+        self.controller.audio_source.cleanup()
+        await self.controller.play_song(ctx, song)
 
     @commands.command()
     async def prev(self, ctx):
@@ -365,19 +371,19 @@ class Music_player(commands.Cog):
             logger.debug("can't prev, not in voice channel")
             return await ctx.send("I'm not in a voice channel.")
 
-        if self.is_loop:
+        if self.controller.is_loop:
             logger.debug("can't prev in loop state")
             return await ctx.send("Can't prev in loop state.")
 
-        song = self.playlist.previous_song()
+        song = self.controller.playlist.previous_song()
 
         if not song:
             logger.debug("can't prev, there are no previous songs")
             return await ctx.send("No previous song.")
 
         ctx.voice_client.pause()
-        self.audio_source.cleanup()
-        await self.play_song(ctx, song)
+        self.controller.audio_source.cleanup()
+        await self.controller.play_song(ctx, song)
 
     @commands.command()
     async def pause(self, ctx):
@@ -406,7 +412,7 @@ class Music_player(commands.Cog):
     @commands.command()
     async def playlist(self, ctx):
         logger.debug(f"!playlist command is executing by {ctx.author}")
-        await ctx.send(self.playlist.print_playlist())
+        await ctx.send(self.controller.playlist.print_playlist())
 
     @commands.command()
     async def stop(self, ctx):
@@ -415,7 +421,7 @@ class Music_player(commands.Cog):
 
         if voice_client:
             logger.debug("cleaning up")
-            await self.exit(ctx)
+            await self.controller.exit(ctx)
         else:
             await ctx.send("I'm not currently in a voice channel.")
 
