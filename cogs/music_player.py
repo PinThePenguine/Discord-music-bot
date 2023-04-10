@@ -18,7 +18,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(2, 1, commands.BucketType.user)
     @commands.guild_only()
     async def play(self, ctx, url: str = commands.parameter(description="The YouTube video or playlist link that you want to play.")):
-        logger.debug(f"!play command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}play command is executing by {ctx.author}")
 
         author_voice_client = ctx.author.voice
         bot_voice_clients = self.bot.voice_clients
@@ -53,11 +53,11 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def loop(self, ctx):
-        logger.debug(f"!loop command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}loop command is executing by {ctx.author}")
         self.controller.is_loop = not self.controller.is_loop
         if self.controller.is_loop:
             logger.debug("Loop state: ON")
-            await ctx.send("Music is now looping. To disable loop mode, send '>loop'")
+            await ctx.send(f"Music is now looping. To disable loop mode, send '{config.BOT_PREFIX}loop'")
         else:
             logger.debug("Loop state: OFF")
             await ctx.send("Music is no longer looping.")
@@ -68,7 +68,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def skip(self, ctx):
-        logger.debug(f"!skip command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}skip command is executing by {ctx.author}")
         voice_client = ctx.voice_client
 
         if not voice_client:
@@ -96,7 +96,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def prev(self, ctx):
-        logger.debug(f"!prev command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}prev command is executing by {ctx.author}")
         voice_client = ctx.voice_client
 
         if not voice_client:
@@ -123,7 +123,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def pause(self, ctx):
-        logger.debug(f"!pause command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}pause command is executing by {ctx.author}")
         voice_client = ctx.voice_client
 
         if not voice_client or not voice_client.is_playing():
@@ -139,7 +139,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def resume(self, ctx):
-        logger.debug(f"!resume command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}resume command is executing by {ctx.author}")
         voice_client = ctx.voice_client
 
         if not voice_client or not voice_client.is_paused():
@@ -165,7 +165,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def stop(self, ctx):
-        logger.debug(f"!stop command is executing by {ctx.author}")
+        logger.debug(f"{config.BOT_PREFIX}stop command is executing by {ctx.author}")
         voice_client = ctx.voice_client
 
         if voice_client:

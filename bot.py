@@ -6,6 +6,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from loguru import logger
 
+import config
+
 
 def setup_logger():
     """
@@ -57,7 +59,16 @@ def main():
         logger.error("DISCORD_TOKEN environment variable not set.")
         return
 
-    bot = commands.Bot(command_prefix='>', intents=discord.Intents.all())
+    bot = commands.Bot(command_prefix=config.BOT_PREFIX, intents=discord.Intents.all())
+
+    @bot.event
+    async def on_ready():
+        await bot.change_presence(activity=discord.Game(name="Music, type {}help".format(config.BOT_PREFIX)))
+
+    @bot.event
+    async def on_guild_join(guild):
+        print(f"Joined new guild: {guild.name} ({guild.id})")
+        # audio_players[guild.id] = MyAudioPlayerClass()
 
     @bot.event
     async def on_command_error(ctx, error):
