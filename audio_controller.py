@@ -8,6 +8,7 @@ from downloader import Youtube_downloader
 from song import Song
 
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+guild_controller = {}
 
 
 class Audio_controller():

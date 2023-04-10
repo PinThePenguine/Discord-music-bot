@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 import config
+from audio_controller import Audio_controller, guild_controller
 
 
 def setup_logger():
@@ -64,18 +65,20 @@ def main():
 
     @bot.event
     async def on_ready():
-        # await tree.sync(guild=discord.Object(id=1092499114152968285))
+        for guild in bot.guilds:
+            guild_controller[guild] = Audio_controller(bot)
+            logger.debug(f"Joined {guild.name}")
         try:
             synced = await bot.tree.sync()
-            print(f"Synced {len(synced)} command(s)")
+            logger.debug(f"Synced {len(synced)} slash-commands")
         except Exception as e:
             print(f"Error syncing commands: {e}")
         await bot.change_presence(activity=discord.Game(name="music, type {}play".format(config.BOT_PREFIX)))
 
     @bot.event
     async def on_guild_join(guild):
+        guilds[guild] = Audio_controller(bot, guild)
         print(f"Joined new guild: {guild.name} ({guild.id})")
-        # audio_players[guild.id] = MyAudioPlayerClass()
 
     @bot.event
     async def on_command_error(ctx, error):

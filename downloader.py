@@ -29,7 +29,6 @@ class Youtube_downloader:
         Initializes the Youtube_downloader class and creates a YoutubeDL object for downloading and extracting information.
         """
         self.downloader = yt_dlp.YoutubeDL(YDL_OPTIONS)
-        logger.debug('init downloader')
 
     def is_youtube_url(self, url: str) -> bool:
         """
