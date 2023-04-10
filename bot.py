@@ -2,6 +2,7 @@ import asyncio
 import os
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 from loguru import logger
@@ -63,7 +64,13 @@ def main():
 
     @bot.event
     async def on_ready():
-        await bot.change_presence(activity=discord.Game(name="Music, type {}help".format(config.BOT_PREFIX)))
+        # await tree.sync(guild=discord.Object(id=1092499114152968285))
+        try:
+            synced = await bot.tree.sync()
+            print(f"Synced {len(synced)} command(s)")
+        except Exception as e:
+            print(f"Error syncing commands: {e}")
+        await bot.change_presence(activity=discord.Game(name="music, type {}play".format(config.BOT_PREFIX)))
 
     @bot.event
     async def on_guild_join(guild):
@@ -75,6 +82,15 @@ def main():
         if isinstance(error, commands.CommandOnCooldown):
             seconds = error.retry_after
             await ctx.send(f"This command is on cooldown. Try again in {seconds:.2f} seconds.")
+
+    @bot.tree.command(name="hello")
+    async def hello(interaction: discord.Interaction):
+        await interaction.response.send_message(f"Hello {interaction.user.mention}")
+
+    @bot.tree.command(name="say")
+    @app_commands.describe(argument = "Something")
+    async def say(interaction: discord.Interaction, argument: str):
+        await interaction.response.send_message(f"{interaction.user.name} sayd {argument}")
 
     asyncio.run(load_cogs(bot))
 
