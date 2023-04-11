@@ -3,6 +3,7 @@ from loguru import logger
 
 import config
 from audio_controller import Audio_controller, guild_controller
+from downloader import Youtube_downloader
 from playlist import Playlist
 
 
@@ -46,7 +47,7 @@ class Music_player(commands.Cog):
                 logger.debug(f"can't execute command, bot is already playing in different channel")
                 return await ctx.send("Bot is already playing music in another channel.")
 
-        if not controller.downloader.is_valid_url(url):
+        if not await Youtube_downloader.is_valid_url(url):
             return await ctx.send("Invalid URL")
 
         if ctx.guild.voice_client:  # if already connected to a voice channel, add song to playlist

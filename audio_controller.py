@@ -4,7 +4,7 @@ import threading
 import discord
 from loguru import logger
 
-from downloader import Youtube_downloader
+from playlist_manager import Playlist_manager
 from song import Song
 
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
@@ -20,15 +20,15 @@ class Audio_controller():
         playlist: A playlist object that stores the list of songs to be played.
         audio_source: An audio source object that represents the current playing song.
         is_loop: A boolean flag that indicates whether the playlist is set to loop or not.
-        downloader: A Youtube_downloader object that is used to download songs from YouTube.
+        playlist_manager: A Playlist_manager object that manage adding song to the playlist
 
     Methods:
         init(self, bot): Constructor method that initializes the object with the bot object and sets other attributes to default values.
         _resetting(self): Resets the playlist and audio_source attributes and sets is_loop to False.
         exit(self, ctx): Resets the attributes, sends a message to the Discord server, and disconnects the bot from the voice client.
-        add_to_playlist(self, ctx, url): Adds a song or playlist to the playlist object by calling either add_playlist_to_playlist() or add_song_to_playlist() methods depending on the URL provided.
-        add_playlist_to_playlist(self, ctx, url: str): Gets all the songs in a YouTube playlist and adds them to the playlist object.
-        add_song_to_playlist(self, ctx, url: str): Gets a single song from YouTube and adds it to the playlist object.
+    #add_to_playlist(self, ctx, url): Adds a song or playlist to the playlist object by calling either add_playlist_to_playlist() or add_song_to_playlist() methods depending on the URL provided.
+    #add_playlist_to_playlist(self, ctx, url: str): Gets all the songs in a YouTube playlist and adds them to the playlist object.
+    #add_song_to_playlist(self, ctx, url: str): Gets a single song from YouTube and adds it to the playlist object.
         play_song(self, ctx, song): Plays the song by setting up an audio stream and playing it through the voice client.
         play_next_song(self, ctx): Changes the current playing song to the next song in the playlist if there is one. If there is no next song and is_loop is False, it exits the bot by calling the exit() method. If is_loop is True, it starts playing the same song again.
     """
@@ -44,13 +44,14 @@ class Audio_controller():
         self.playlist = None
         self.audio_source = None
         self.is_loop = False
-        self.downloader = Youtube_downloader()
+        self.playlist_manager = Playlist_manager()
 
     def _resetting(self):
         """
         Resets the music player to its default state.
         """
         self.is_loop = False
+        self.playlist_manager.time_to_shutdown = True
         self.playlist = None
         self.audio_source.cleanup()
         self.audio_source = None
@@ -76,17 +77,17 @@ class Audio_controller():
             ctx (discord.ext.commands.Context): The context of the command.
             url (str): The URL of the song or playlist to be added.
         """
-        if "playlist" in url:
+        if "list" in url:
             await ctx.send("Adding playlist, it may take some time")
-            if not await self.add_playlist_to_playlist(ctx, url):
+            if not await self._add_playlist_to_playlist(ctx, url):
                 return await ctx.send("Can't add playlist, something went wrong :(")
         else:
-            if not await self.add_song_to_playlist(ctx, url):
+            if not await self._add_song_to_playlist(ctx, url):
                 return await ctx.send("Can't add song to playlist, please check your url")
 
-    async def add_playlist_to_playlist(self, ctx, url: str):
+    async def _add_playlist_to_playlist(self, ctx, url: str):
         """
-        Adds a playlist to the MusicPlayer instance's playlist.
+        Adds a playlist to the Audio_controller instance's playlist.
 
         Parameters:
             ctx (discord.ext.commands.Context): The context of the command.
@@ -97,42 +98,20 @@ class Audio_controller():
         """
         logger.debug("Add playlist")
         try:
-            result_queue = queue.Queue()
-            thread = threading.Thread(target=self.downloader.create_song, args=(url, result_queue, True))
-            thread.start()
-            thread.join()
-            while not result_queue.empty():
-                song = result_queue.get()
-                self.playlist.append_song(song)
+            await self.playlist_manager.add_playlist(url, self.playlist)
         except Exception as e:
             logger.error(f"Can't add playlist to {url}\n {e}")
             return False
-        await ctx.send("Playlist added successfully")
         return True
 
-    async def add_song_to_playlist(self, ctx, url: str):
-        """
-        Adds a song to the music player's playlist.
+    async def _add_song_to_playlist(self, ctx, url: str):
 
-        Parameters:
-            ctx (discord.ext.commands.Context): The context of the command.
-            url (str): The URL of the song to be added.
-
-        Returns:
-            bool: Returns True if the song was successfully added to the playlist. Returns False otherwise.
-        """
-        result_queue = queue.Queue()
-        thread = threading.Thread(target=self.downloader.create_song, args=(url, result_queue))
-        thread.start()
-        thread.join()
-        song = result_queue.get()
-
-        if song is not None:
-            self.playlist.append_song(song)
-            await ctx.send(f"Added {song.title} to the playlist.")
-            return True
-
-        return False
+        try:
+            await self.playlist_manager.add_song(url, self.playlist)
+        except Exception as e:
+            logger.error(f"Can't add song {url}\n {e}")
+            return False
+        return True
 
     async def play_song(self, ctx, song: Song):
         """
