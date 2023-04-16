@@ -14,9 +14,11 @@ from playlist import Playlist
 YDL_OPTIONS = {
     'format': 'bestaudio/best',
     'nocheckcertificate': True,
+    'ignoreerrors': True,
     'socket_timeout': 10,
     'cachedir': False,
     'noresizebuffer': True,
+    "extract_flat": "in_playlist",
 }
 
 
@@ -85,3 +87,14 @@ class Youtube_downloader:
         if Youtube_downloader.is_youtube_url(url) and await Youtube_downloader.is_valid_youtube_url(url):
             return True
         return False
+
+    @staticmethod
+    def normalize_youtube_playlist_url(url):
+        playlist_id = re.search(r"list=([^&]+)", url)
+        if playlist_id is not None:
+            playlist_id = playlist_id.group(1)
+            print("playlist_id")
+            return f"https://www.youtube.com/playlist?list={playlist_id}"
+        else:
+            print("None")
+            return None

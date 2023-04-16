@@ -80,10 +80,13 @@ class Audio_controller():
         if "list" in url:
             await ctx.send("Adding playlist, it may take some time")
             if not await self._add_playlist_to_playlist(ctx, url):
-                return await ctx.send("Can't add playlist, something went wrong :(")
+                await ctx.send("Can't add playlist, something went wrong :(")
+                return False
         else:
             if not await self._add_song_to_playlist(ctx, url):
-                return await ctx.send("Can't add song to playlist, please check your url")
+                await ctx.send("Can't add song to playlist, please check your url")
+                return False
+        return True
 
     async def _add_playlist_to_playlist(self, ctx, url: str):
         """

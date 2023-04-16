@@ -1,4 +1,5 @@
 import itertools
+import re
 import threading
 from queue import Queue
 
@@ -15,7 +16,6 @@ class Playlist_manager():
         self.downloader = Youtube_downloader()
         self.time_to_shutdown = False
 
-    # delete from playlist
     # push song to playlist
     # push playlist to playlist
 
@@ -50,7 +50,14 @@ class Playlist_manager():
         thread.join()
 
     async def add_playlist(self, url: str, playlist: Playlist):
+        
         playlist_info = self.downloader.downloader.extract_info(url, download=False, process=False)
+        if 'entries' not in playlist_info: # https://www.youtube.com/watch?v=Jo9Mmx7AqDQ&list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC&ab_channel=AIClips type link, need normalization
+            url = Youtube_downloader.normalize_youtube_playlist_url(url)
+            playlist_info = self.downloader.downloader.extract_info(url, download=False, process=False)
+            if 'entries' not in playlist_info:
+                return False 
+             
         thread = threading.Thread(target=self._add_first_playlist_song, args=(playlist_info, playlist))
         thread.start()
         thread.join()
@@ -58,9 +65,6 @@ class Playlist_manager():
         thread.start()
 
     def _add_first_playlist_song(self, playlist_info, playlist: Playlist):
-        if 'entries' not in playlist_info:
-            logger.error("No entries found in the playlist")
-            return None
         for song in itertools.islice(playlist_info['entries'], 1):
             song = self.create_song(song.get('url'))
             playlist.append_song(song)
@@ -70,13 +74,10 @@ class Playlist_manager():
         playlist.append_song(song)
 
     def _add_other_playlist(self, playlist_info, playlist: Playlist):
-
-        if 'entries' not in playlist_info:
-            logger.error("No entries found in the playlist")
-            return None
         for song in itertools.islice(playlist_info['entries'], 0, None):
             if self.time_to_shutdown:  # kill when audio_controller is resetting
                 self.time_to_shutdown = False
                 return
-            song = self.create_song(song.get('url'))
-            playlist.append_song(song)
+            elif song:
+                song = self.create_song(song.get('url'))
+                playlist.append_song(song)

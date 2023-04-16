@@ -54,9 +54,9 @@ class Music_player(commands.Cog):
             await controller.add_to_playlist(ctx, url)
         else:  # connect to voice channel and start playing first song
             controller.playlist = Playlist()
-            await controller.add_to_playlist(ctx, url)
-            await author_voice_client.channel.connect()
-            await controller.play_song(ctx, controller.playlist.head)
+            if await controller.add_to_playlist(ctx, url):
+                await author_voice_client.channel.connect()
+                await controller.play_song(ctx, controller.playlist.head)
 
     @play.error
     async def play_error(self, ctx, error):
