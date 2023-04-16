@@ -17,7 +17,6 @@ class Playlist_manager():
         self.time_to_shutdown = False
 
     # push song to playlist
-    # push playlist to playlist
 
     def create_song(self, url: str):
         """
@@ -56,7 +55,7 @@ class Playlist_manager():
             url = Youtube_downloader.normalize_youtube_playlist_url(url)
             playlist_info = self.downloader.downloader.extract_info(url, download=False, process=False)
             if 'entries' not in playlist_info:
-                return False 
+                return False
              
         thread = threading.Thread(target=self._add_first_playlist_song, args=(playlist_info, playlist))
         thread.start()

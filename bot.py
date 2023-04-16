@@ -77,8 +77,15 @@ def main():
 
     @bot.event
     async def on_guild_join(guild):
-        guilds[guild] = Audio_controller(bot, guild)
+        guild_controller[guild] = Audio_controller(bot, guild)
         print(f"Joined new guild: {guild.name} ({guild.id})")
+
+    @bot.event
+    async def on_message(message):
+        if message.guild:
+            controller = guild_controller[message.guild]
+        await controller.on_message(message)
+        await bot.process_commands(message)
 
     @bot.event
     async def on_command_error(ctx, error):
@@ -91,7 +98,7 @@ def main():
         await interaction.response.send_message(f"Hello {interaction.user.mention}")
 
     @bot.tree.command(name="say")
-    @app_commands.describe(argument = "Something")
+    @app_commands.describe(argument="Something")
     async def say(interaction: discord.Interaction, argument: str):
         await interaction.response.send_message(f"{interaction.user.name} sayd {argument}")
 
