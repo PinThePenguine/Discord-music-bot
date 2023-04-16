@@ -85,7 +85,7 @@ class Audio_controller():
             ctx (discord.ext.commands.Context): The context of the command.
             url (str): The URL of the song or playlist to be added.
         """
-        if "list" in url: #todo add normal regex here (i think, video can have random "list" in or maybe channel name)
+        if "list" in url:  # todo add normal regex here (i think, video can have random "list" in or maybe channel name)
             # await ctx.send("Adding playlist, it may take some time")
             if not await self._add_playlist_to_playlist(ctx, url):
                 await ctx.send("Can't add playlist, something went wrong :(")
@@ -176,11 +176,6 @@ class Audio_controller():
             await ctx.send("I'm not in a voice channel.")
             return False
 
-        if self.is_loop:
-            logger.debug("can't skip in loop state")
-            await ctx.send("Can't skip in loop state.")
-            return False
-
         song = self.playlist.next_song()
         if not song:
             logger.debug("can't skip, there are no next songs")
@@ -199,11 +194,6 @@ class Audio_controller():
         if not voice_client:
             logger.debug("can't prev, not in voice channel")
             await ctx.send("I'm not in a voice channel.")
-            return False
-
-        if self.is_loop:
-            logger.debug("can't prev in loop state")
-            await ctx.send("Can't prev in loop state.")
             return False
 
         song = self.playlist.previous_song()
