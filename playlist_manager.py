@@ -67,17 +67,19 @@ class Playlist_manager():
     def _add_first_playlist_song(self, playlist_info, playlist: Playlist):
         for song in itertools.islice(playlist_info['entries'], 1):
             song = self.create_song(song.get('url'))
-            playlist.append_song(song)
+            if song:
+                playlist.append_song(song)
 
     def _add_song(self, url: str, playlist: Playlist):
         song = self.create_song(url)
-        playlist.append_song(song)
+        if song:
+            playlist.append_song(song)
 
     def _add_other_playlist(self, playlist_info, playlist: Playlist):
         for song in itertools.islice(playlist_info['entries'], 0, None):
             if self.time_to_shutdown:  # kill when audio_controller is resetting
                 self.time_to_shutdown = False
                 return
-            elif song:
-                song = self.create_song(song.get('url'))
+            song = self.create_song(song.get('url'))
+            if song:    
                 playlist.append_song(song)
