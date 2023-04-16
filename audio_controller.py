@@ -6,6 +6,7 @@ from loguru import logger
 
 from playlist_manager import Playlist_manager
 from song import Song
+# from sticky_ui import Sticky_ui
 
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
 guild_controller = {}
@@ -151,3 +152,86 @@ class Audio_controller():
             self.bot.loop.create_task(self.play_song(ctx, self.playlist.head))
         else:
             self.bot.loop.create_task(self.exit(ctx))
+
+    async def loop(self, ctx):
+        self.is_loop = not self.is_loop
+
+        if self.is_loop:
+            logger.debug("Loop state: ON")
+            await ctx.send(f"Music is now looping. To disable loop mode, send '{config.BOT_PREFIX}loop'")
+        else:
+            logger.debug("Loop state: OFF")
+            await ctx.send("Music is no longer looping.")
+
+    async def skip(self, ctx):
+        voice_client = ctx.voice_client
+
+        if not voice_client:
+            logger.debug("can't skip, not in voice channel")
+            return await ctx.send("I'm not in a voice channel.")
+
+        if self.is_loop:
+            logger.debug("can't skip in loop state")
+            return await ctx.send("Can't skip in loop state.")
+
+        song = self.playlist.next_song()
+        if not song:
+            logger.debug("can't skip, there are no next songs")
+            return await ctx.send("No next song.")
+
+        logger.debug('cleaning up audio source')
+        voice_client.pause()
+        self.audio_source.cleanup()
+        await self.play_song(ctx, song)
+
+    async def prev(self, ctx):
+        voice_client = ctx.voice_client
+
+        if not voice_client:
+            logger.debug("can't prev, not in voice channel")
+            return await ctx.send("I'm not in a voice channel.")
+
+        if self.is_loop:
+            logger.debug("can't prev in loop state")
+            return await ctx.send("Can't prev in loop state.")
+
+        song = self.playlist.previous_song()
+        if not song:
+            logger.debug("can't prev, there are no previous songs")
+            return await ctx.send("No previous song.")
+
+        voice_client.pause()
+        self.audio_source.cleanup()
+        await self.play_song(ctx, song)
+
+    async def pause(self, ctx):
+        voice_client = ctx.voice_client
+
+        if not voice_client or not voice_client.is_playing():
+            logger.debug("can't pause")
+            return await ctx.send("I'm not currently playing any audio.")
+
+        voice_client.pause()
+        logger.debug("audio source paused")
+
+    async def resume(self, ctx):
+        voice_client = ctx.voice_client
+
+        if not voice_client or not voice_client.is_paused():
+            logger.debug("can't resume")
+            return await ctx.send("I'm not currently paused.")
+
+        voice_client.resume()
+        logger.debug("audio source resumed")
+
+    async def stop(self, ctx):
+        voice_client = ctx.voice_client
+
+        if voice_client:
+            logger.debug("cleaning up")
+            await self.exit(ctx)
+        else:
+            await ctx.send("I'm not currently in a voice channel.")
+
+    async def playlist(self, ctx):
+        await ctx.send(self.playlist.print_playlist())

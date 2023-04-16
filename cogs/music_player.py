@@ -71,13 +71,7 @@ class Music_player(commands.Cog):
     async def loop(self, ctx):
         logger.debug(f"{config.BOT_PREFIX}loop command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
-        controller.is_loop = not controller.is_loop
-        if controller.is_loop:
-            logger.debug("Loop state: ON")
-            await ctx.send(f"Music is now looping. To disable loop mode, send '{config.BOT_PREFIX}loop'")
-        else:
-            logger.debug("Loop state: OFF")
-            await ctx.send("Music is no longer looping.")
+        await controller.loop(ctx)
 
     @commands.command(name="skip", aliases=['s', 'next'],
                       brief='Play the next song in the playlist.',
@@ -87,26 +81,7 @@ class Music_player(commands.Cog):
     async def skip(self, ctx):
         logger.debug(f"{config.BOT_PREFIX}skip command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
-        voice_client = ctx.voice_client
-
-        if not voice_client:
-            logger.debug("can't skip, not in voice channel")
-            return await ctx.send("I'm not in a voice channel.")
-
-        if controller.is_loop:
-            logger.debug("can't skip in loop state")
-            return await ctx.send("Can't skip in loop state.")
-
-        song = controller.playlist.next_song()
-
-        if not song:
-            logger.debug("can't skip, there are no next songs")
-            return await ctx.send("No next song.")
-
-        logger.debug('cleaning up audio source')
-        voice_client.pause()
-        controller.audio_source.cleanup()
-        await controller.play_song(ctx, song)
+        await controller.skip(ctx)
 
     @commands.command(name="prev", aliases=['pr', 'last'],
                       brief='Play the previous song in the playlist.',
@@ -116,25 +91,7 @@ class Music_player(commands.Cog):
     async def prev(self, ctx):
         logger.debug(f"{config.BOT_PREFIX}prev command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
-        voice_client = ctx.voice_client
-
-        if not voice_client:
-            logger.debug("can't prev, not in voice channel")
-            return await ctx.send("I'm not in a voice channel.")
-
-        if controller.is_loop:
-            logger.debug("can't prev in loop state")
-            return await ctx.send("Can't prev in loop state.")
-
-        song = controller.playlist.previous_song()
-
-        if not song:
-            logger.debug("can't prev, there are no previous songs")
-            return await ctx.send("No previous song.")
-
-        ctx.voice_client.pause()
-        controller.audio_source.cleanup()
-        await controller.play_song(ctx, song)
+        await controller.prev(ctx)
 
     @commands.command(name="pause", aliases=['ps', 'break'],
                       brief="Pause audio in voice channel",
@@ -143,14 +100,8 @@ class Music_player(commands.Cog):
     @commands.guild_only()
     async def pause(self, ctx):
         logger.debug(f"{config.BOT_PREFIX}pause command is executing by {ctx.author}")
-        voice_client = ctx.voice_client
-
-        if not voice_client or not voice_client.is_playing():
-            logger.debug("can't pause")
-            return await ctx.send("I'm not currently playing any audio.")
-
-        voice_client.pause()
-        logger.debug("audio source paused")
+        controller = self.get_guild_controller(ctx)
+        await controller.pause(ctx)
 
     @commands.command(name="resume", aliases=['rs', 'res'],
                       brief="Resume audio in voice channel",
@@ -159,14 +110,8 @@ class Music_player(commands.Cog):
     @commands.guild_only()
     async def resume(self, ctx):
         logger.debug(f"{config.BOT_PREFIX}resume command is executing by {ctx.author}")
-        voice_client = ctx.voice_client
-
-        if not voice_client or not voice_client.is_paused():
-            logger.debug("can't resume")
-            return await ctx.send("I'm not currently paused.")
-
-        voice_client.resume()
-        logger.debug("audio source resumed")
+        controller = self.get_guild_controller(ctx)
+        await controller.resume(ctx)
 
     @commands.command(name="playlist", aliases=['songs', 'songlist', 'list'],
                       brief="Get a list of songs from the playlist",
@@ -176,7 +121,7 @@ class Music_player(commands.Cog):
     async def playlist(self, ctx):
         logger.debug(f"!playlist command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
-        await ctx.send(controller.playlist.print_playlist())
+        await controller.playlist(ctx)
 
     @commands.command(name="stop", aliases=['exit', 'quit', 'die', 'kill'],
                       brief="Stop audio and disconnect from server",
@@ -186,13 +131,7 @@ class Music_player(commands.Cog):
     async def stop(self, ctx):
         logger.debug(f"{config.BOT_PREFIX}stop command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
-        voice_client = ctx.voice_client
-
-        if voice_client:
-            logger.debug("cleaning up")
-            await controller.exit(ctx)
-        else:
-            await ctx.send("I'm not currently in a voice channel.")
+        await controller.stop(ctx)
 
 
 async def setup(bot):
