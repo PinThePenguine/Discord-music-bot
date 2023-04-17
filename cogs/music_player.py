@@ -1,3 +1,5 @@
+import discord
+from discord import app_commands
 from discord.ext import commands
 from loguru import logger
 
@@ -33,7 +35,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(2, 1, commands.BucketType.user)
     @commands.guild_only()
     async def play(self, ctx, url: str = commands.parameter(description="The YouTube video or playlist link that you want to play.")):
-        logger.debug(f"{config.BOT_PREFIX}play command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}play command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         author_voice_client = ctx.author.voice
         bot_voice_clients = self.bot.voice_clients
@@ -69,7 +71,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def loop(self, ctx):
-        logger.debug(f"{config.BOT_PREFIX}loop command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}loop command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.loop(ctx)
 
@@ -79,7 +81,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def skip(self, ctx):
-        logger.debug(f"{config.BOT_PREFIX}skip command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}skip command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.skip(ctx)
 
@@ -89,7 +91,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def prev(self, ctx):
-        logger.debug(f"{config.BOT_PREFIX}prev command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}prev command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.prev(ctx)
 
@@ -99,7 +101,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def pause(self, ctx):
-        logger.debug(f"{config.BOT_PREFIX}pause command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}pause command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.pause(ctx)
 
@@ -109,7 +111,7 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def resume(self, ctx):
-        logger.debug(f"{config.BOT_PREFIX}resume command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}resume command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.resume(ctx)
 
@@ -119,17 +121,17 @@ class Music_player(commands.Cog):
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def playlist(self, ctx):
-        logger.debug(f"!playlist command is executing by {ctx.author}")
+        logger.info(f"!playlist command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.playlist(ctx)
 
     @commands.command(name="stop", aliases=['exit', 'quit', 'die', 'kill'],
-                      brief="Stop audio and disconnect from server",
+                      brief="Stop audio and disconnect from voice channel",
                       description=config.STOP_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
     async def stop(self, ctx):
-        logger.debug(f"{config.BOT_PREFIX}stop command is executing by {ctx.author}")
+        logger.info(f"{config.BOT_PREFIX}stop command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
         await controller.stop(ctx)
 
