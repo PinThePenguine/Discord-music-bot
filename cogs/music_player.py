@@ -30,7 +30,7 @@ class Music_player(commands.Cog):
         return None
 
     @commands.command(name="play", aliases=['p', 'song', 'sing', 'add'],
-                      brief='Play music in a voice channel',
+                      brief=config.PLAY_COMMAND_BRIEF,
                       description=config.PLAY_COMMAND_DESCRIPTION)
     @commands.cooldown(2, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -66,7 +66,7 @@ class Music_player(commands.Cog):
             await ctx.channel.send(f"You did not provide a required argument. The correct syntax is: {config.BOT_PREFIX}play <youtube_url>")
 
     @commands.command(name="loop", aliases=['l', 'repeat'],
-                      brief='Loop the currently playing song',
+                      brief=config.LOOP_COMMAND_BRIEF,
                       description=config.LOOP_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -76,7 +76,7 @@ class Music_player(commands.Cog):
         await controller.loop(ctx)
 
     @commands.command(name="skip", aliases=['s', 'next'],
-                      brief='Play the next song in the playlist',
+                      brief=config.SKIP_COMMAND_BRIEF,
                       description=config.SKIP_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -86,7 +86,7 @@ class Music_player(commands.Cog):
         await controller.skip(ctx)
 
     @commands.command(name="prev", aliases=['pr', 'last'],
-                      brief='Play the previous song in the playlist',
+                      brief=config.PREV_COMMAND_BRIEF,
                       description=config.PREV_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -96,7 +96,7 @@ class Music_player(commands.Cog):
         await controller.prev(ctx)
 
     @commands.command(name="pause", aliases=['ps', 'break'],
-                      brief="Pause audio in voice channel",
+                      brief=config.PAUSE_COMMAND_BRIEF,
                       description=config.PAUSE_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -106,7 +106,7 @@ class Music_player(commands.Cog):
         await controller.pause(ctx)
 
     @commands.command(name="resume", aliases=['rs', 'res'],
-                      brief="Resume audio in voice channel",
+                      brief=config.RESUME_COMMAND_BRIEF,
                       description=config.RESUME_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -116,7 +116,7 @@ class Music_player(commands.Cog):
         await controller.resume(ctx)
 
     @commands.command(name="playlist", aliases=['songs', 'songlist', 'list'],
-                      brief="Get a list of songs from the playlist",
+                      brief=config.PLAYLIST_COMMAND_BRIEF,
                       description=config.PLAYLIST_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -126,7 +126,7 @@ class Music_player(commands.Cog):
         await controller.playlist(ctx)
 
     @commands.command(name="stop", aliases=['exit', 'quit', 'die', 'kill'],
-                      brief="Stop audio and disconnect from voice channel",
+                      brief=config.STOP_COMMAND_BRIEF,
                       description=config.STOP_COMMAND_DESCRIPTION)
     @commands.cooldown(3, 1, commands.BucketType.user)
     @commands.guild_only()
@@ -138,7 +138,7 @@ class Music_player(commands.Cog):
 
     if config.SLASH_COMMANDS:
 
-        @app_commands.command(name="play", description="Play music in a voice channel")
+        @app_commands.command(name="play", description=config.PLAY_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_play(self, interaction: discord.Interaction, url: str):
             logger.info(f"/play command is executing by {interaction.user}")
@@ -171,7 +171,7 @@ class Music_player(commands.Cog):
                     await interaction.followup.send("Audioplayer startup", ephemeral=True)
 
             
-        @app_commands.command(name="loop", description="Loop the currently playing song")
+        @app_commands.command(name="loop", description=config.LOOP_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_loop(self, interaction: discord.Interaction):
             logger.info(f"/loop command is executing by {interaction.user}")
@@ -184,7 +184,7 @@ class Music_player(commands.Cog):
             except Exception as e:
                 await interaction.response.send_message(f"Can't loop", ephemeral=True)
         
-        @app_commands.command(name="skip", description="Play the next song in the playlist")
+        @app_commands.command(name="skip", description=config.SKIP_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_skip(self, interaction: discord.Interaction):
             logger.info(f"/skip command is executing by {interaction.user}")
@@ -195,7 +195,7 @@ class Music_player(commands.Cog):
             else: 
                 await interaction.response.send_message("Can't skip", ephemeral=True)
 
-        @app_commands.command(name="prev", description="Play the previous song in the playlist")
+        @app_commands.command(name="prev", description=config.PREV_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_prev(self, interaction: discord.Interaction):
             logger.info(f"/prev command is executing by {interaction.user}")
@@ -206,7 +206,7 @@ class Music_player(commands.Cog):
             else:
                 await interaction.response.send_message("Can't play previous song", ephemeral=True)
 
-        @app_commands.command(name="pause", description="Pause audio in voice channel")
+        @app_commands.command(name="pause", description=config.PAUSE_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_pause(self, interaction: discord.Interaction):
             logger.info(f"/pause command is executing by {interaction.user}")
@@ -217,7 +217,7 @@ class Music_player(commands.Cog):
             else:
                 await interaction.response.send_message("Can't pause", ephemeral=True)
 
-        @app_commands.command(name="resume", description="Resume audio in voice channel")
+        @app_commands.command(name="resume", description=config.RESUME_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_resume(self, interaction: discord.Interaction):
             logger.info(f"/resume command is executing by {interaction.user}")
@@ -228,7 +228,7 @@ class Music_player(commands.Cog):
             else:
                 await interaction.response.send_message("Can't resume", ephemeral=True)
 
-        @app_commands.command(name="playlist", description="Get a list of songs from the playlist")
+        @app_commands.command(name="playlist", description=config.RESUME_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_playlist(self, interaction: discord.Interaction):
             logger.info(f"/playlist command is executing by {interaction.user}")
@@ -237,7 +237,7 @@ class Music_player(commands.Cog):
             await controller.playlist(ctx)
             await interaction.response.send_message("Done", ephemeral=True)
 
-        @app_commands.command(name="stop", description="Stop audio and disconnect from voice channel")
+        @app_commands.command(name="stop", description=config.STOP_COMMAND_BRIEF)
         @app_commands.guild_only()
         async def slash_stop(self, interaction: discord.Interaction):
             logger.info(f"/stop command is executing by {interaction.user}")
