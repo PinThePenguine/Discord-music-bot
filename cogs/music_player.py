@@ -123,7 +123,7 @@ class Music_player(commands.Cog):
     async def playlist(self, ctx):
         logger.info(f"{config.BOT_PREFIX}playlist command is executing by {ctx.author}")
         controller = self.get_guild_controller(ctx)
-        await controller.playlist(ctx)
+        await controller.get_playlist(ctx)
 
     @commands.command(name="stop", aliases=['exit', 'quit', 'die', 'kill'],
                       brief=config.STOP_COMMAND_BRIEF,
