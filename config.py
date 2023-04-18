@@ -1,3 +1,12 @@
+AUDIOPLAYER_UI = False
+
+BUTTON_PREV_SYMBOL = "|◁"
+BUTTON_PLAY_SYMBOL = "▶"
+BUTTON_PAUSE_SYMBOL = "❚❚"
+BUTTON_SKIP_SYMBOL = "▷|"
+BUTTON_LOOP_SYMBOL = "↺"
+BUTTON_KILL_SYMBOL = "💀"
+
 BOT_PREFIX = ">"
 
 PLAY_COMMAND_DESCRIPTION = f"This command plays music in a voice channel. To use it, type the command followed by a valid YouTube video or playlist link. The bot will check if you are in a voice channel and if the bot is already playing music in the different channel. If not, it will connect to the voice channel and start playing the song. If the bot is already playing music, the command will add the song to the playlist.\n\nRequirements: This command can only be used in a server (not in DMs).\nExamples:\n{BOT_PREFIX}play https://www.youtube.com/watch?v=dQw4w9WgXcQ: Plays the song with the given YouTube link.\n{BOT_PREFIX}play: Sends an error message indicating that a YouTube link is required.\n{BOT_PREFIX}play https://www.youtube.com/watch?v=dQw4w9WgXcQ (while bot is already playing music in the different channel): Sends an error message indicating that the bot is already playing music in another channel.\n{BOT_PREFIX}play https://www.youtube.com/playlist?list=PL8R4u0UAeAo3FisFJfsUuYFTIBcyDk1ti  Plays the playlist with the given YouTube link"

@@ -70,10 +70,13 @@ class Audio_controller():
         Parameters:
             ctx (discord.ext.commands.Context): The context of the command.
         """
-        await self.message.delete()
+        try:
+            await self.message.delete()
+        except discord.NotFound:
+            logger.warning(f"Failed to delete message, message not found")
+
         self._resetting()
-        logger.debug("It's time to stop.")
-        await ctx.send("My job here is done!")
+        await ctx.channel.send("My job here is done!")
         await ctx.guild.voice_client.disconnect()
         logger.debug("Disconnected from voice client")
 
@@ -86,13 +89,13 @@ class Audio_controller():
             url (str): The URL of the song or playlist to be added.
         """
         if "list" in url:  # todo add normal regex here (i think, video can have random "list" in or maybe channel name)
-            # await ctx.send("Adding playlist, it may take some time")
+            # await ctx.channel.send("Adding playlist, it may take some time")
             if not await self._add_playlist_to_playlist(ctx, url):
-                await ctx.send("Can't add playlist, something went wrong :(")
+                await ctx.channel.send("Can't add playlist, something went wrong :(")
                 return False
         else:
             if not await self._add_song_to_playlist(ctx, url):
-                await ctx.send("Can't add song to playlist, please check your url")
+                await ctx.channel.send("Can't add song to playlist, please check your url")
                 return False
         return True
 
@@ -135,7 +138,10 @@ class Audio_controller():
         logger.debug("Trying to play song")
 
         if not self.message:
-            self.message = await ctx.send(f"Now playing: {song.title}", view=self.view)
+            if config.AUDIOPLAYER_UI:
+                self.message = await ctx.channel.send(f"Now playing: {song.title}", view=self.view)
+            else:
+                self.message = await ctx.channel.send(f"Now playing: {song.title}")
         else:
             await self.message.edit(content=f"Now playing: {song.title}")
 
@@ -168,24 +174,31 @@ class Audio_controller():
     async def loop(self, ctx):
         self.is_loop = not self.is_loop
 
+        if config.AUDIOPLAYER_UI:
+            await self.view.update_view(ctx)
+
     async def skip(self, ctx):
         voice_client = ctx.voice_client
 
         if not voice_client:
             logger.debug("can't skip, not in voice channel")
-            await ctx.send("I'm not in a voice channel.")
+            await ctx.channel.send("I'm not in a voice channel.")
             return False
 
         song = self.playlist.next_song()
         if not song:
             logger.debug("can't skip, there are no next songs")
-            await ctx.send("No next song.")
+            await ctx.channel.send("No next song.")
             return False
 
         logger.debug('cleaning up audio source')
         voice_client.pause()
         self.audio_source.cleanup()
         await self.play_song(ctx, song)
+
+        if config.AUDIOPLAYER_UI:
+            await self.view.update_view(ctx)
+
         return True
 
     async def prev(self, ctx):
@@ -193,18 +206,22 @@ class Audio_controller():
 
         if not voice_client:
             logger.debug("can't prev, not in voice channel")
-            await ctx.send("I'm not in a voice channel.")
+            await ctx.channel.send("I'm not in a voice channel.")
             return False
 
         song = self.playlist.previous_song()
         if not song:
             logger.debug("can't prev, there are no previous songs")
-            await ctx.send("No previous song.")
+            await ctx.channel.send("No previous song.")
             return False
 
         voice_client.pause()
         self.audio_source.cleanup()
         await self.play_song(ctx, song)
+
+        if config.AUDIOPLAYER_UI:
+            await self.view.update_view(ctx)
+
         return True
 
     async def pause(self, ctx):
@@ -212,20 +229,32 @@ class Audio_controller():
 
         if not voice_client or not voice_client.is_playing():
             logger.debug("can't pause")
-            return await ctx.send("I'm not currently playing any audio.")
+            await ctx.channel.send("I'm not currently playing any audio.")
+            return False
 
         voice_client.pause()
+
+        if config.AUDIOPLAYER_UI:
+            await self.view.update_view(ctx)
+
         logger.debug("audio source paused")
+        return True
 
     async def resume(self, ctx):
         voice_client = ctx.voice_client
 
         if not voice_client or not voice_client.is_paused():
             logger.debug("can't resume")
-            return await ctx.send("I'm not currently paused.")
+            await ctx.channel.send("I'm not currently paused.")
+            return False
 
         voice_client.resume()
+
+        if config.AUDIOPLAYER_UI:
+            await self.view.update_view(ctx)
+
         logger.debug("audio source resumed")
+        return True
 
     async def stop(self, ctx):
         voice_client = ctx.voice_client
@@ -234,26 +263,31 @@ class Audio_controller():
             logger.debug("cleaning up")
             await self.exit(ctx)
         else:
-            await ctx.send("I'm not currently in a voice channel.")
+            await ctx.channel.send("I'm not currently in a voice channel.")
 
     async def playlist(self, ctx):
-        await ctx.send(self.playlist.print_playlist())
+        await ctx.channel.send(self.playlist.print_playlist())
 
     async def on_message(self, message):
         """
         Method called when the bot receives a message.
         """
+        if message.author == self.bot.user:
+            return
 
-        if not self.message or message.author == self.bot.user:
-            logger.debug("Message is none or bot message")
-        else:
-            logger.debug("Trying to delete")
-            try:
-                output_message = self.message.content
-                await self.message.delete()
-            except discord.NotFound:
-                logger.warning(f"Failed to delete message {self.message.id}, message not found")
+        if not self.message:
+            return
+
+        try:
+            output_message = self.message.content
+            await self.message.delete()
+        except discord.NotFound:
+            logger.warning(f"Failed to delete message, message not found")
+
+        if config.AUDIOPLAYER_UI:
             self.message = await message.channel.send(output_message, view=self.view)
+        else:
+            self.message = await message.channel.send(output_message)
 
 
 class AudioPlayerView(discord.ui.View):
@@ -263,48 +297,54 @@ class AudioPlayerView(discord.ui.View):
         self.bot = bot
         self.controller = controller
 
-    @discord.ui.button(label="|◁", style=discord.ButtonStyle.blurple)
-    async def prev(self, interaction: discord.Interaction, button: discord.ui.Button):
-        ctx = await self.bot.get_context(interaction.message)
-        if await self.controller.prev(ctx):
-            playpause_button = self.children[1]
-            playpause_button.label = "❚❚"
-        await interaction.response.edit_message(view=self)
+    async def update_view(self, ctx):
+        playpause_button = self.children[1]  # access playpause_button through self
 
-    @discord.ui.button(label="❚❚", style=discord.ButtonStyle.blurple)
-    async def playpause(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if ctx.voice_client.is_playing():
+            playpause_button.label = config.BUTTON_PAUSE_SYMBOL
+        else:
+            playpause_button.label = config.BUTTON_PLAY_SYMBOL
+
+        loop_button = self.children[3]  # access loop_button through self
+
+        if self.controller.is_loop:
+            loop_button.style = discord.ButtonStyle.success
+        else:
+            loop_button.style = discord.ButtonStyle.gray
+
+        await self.controller.message.edit(view=self)
+
+    @discord.ui.button(label=config.BUTTON_PREV_SYMBOL, style=discord.ButtonStyle.blurple)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        ctx = await self.bot.get_context(interaction.message)
+        await self.controller.prev(ctx)
+        await interaction.response.defer(ephemeral=True)
+
+    @discord.ui.button(label=config.BUTTON_PAUSE_SYMBOL, style=discord.ButtonStyle.blurple)
+    async def playpause_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         ctx = await self.bot.get_context(interaction.message)
 
-        if button.label == "❚❚":
+        if button.label == config.BUTTON_PAUSE_SYMBOL:
             await self.controller.pause(ctx)
-            button.label = "▶"
         else:
             await self.controller.resume(ctx)
-            button.label = "❚❚"
 
-        await interaction.response.edit_message(view=self)
+        await interaction.response.defer(ephemeral=True)
 
-    @discord.ui.button(label="▷|", style=discord.ButtonStyle.blurple)
-    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label=config.BUTTON_SKIP_SYMBOL, style=discord.ButtonStyle.blurple)
+    async def skip_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         ctx = await self.bot.get_context(interaction.message)
-        if await self.controller.skip(ctx):
-            playpause_button = self.children[1]
-            playpause_button.label = "❚❚"
-        await interaction.response.edit_message(view=self)
+        await self.controller.skip(ctx)
+        await interaction.response.defer(ephemeral=True)
 
-    @discord.ui.button(label="↺", style=discord.ButtonStyle.gray)
-    async def loop(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label=config.BUTTON_LOOP_SYMBOL, style=discord.ButtonStyle.gray)
+    async def loop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         ctx = await self.bot.get_context(interaction.message)
         await self.controller.loop(ctx)
-        if button.style == discord.ButtonStyle.gray:
-            button.style = discord.ButtonStyle.success
-        else:
-            button.style = discord.ButtonStyle.gray
+        await interaction.response.defer(ephemeral=True)
 
-        await interaction.response.edit_message(view=self)
-
-    @discord.ui.button(label="💀", style=discord.ButtonStyle.danger)
-    async def exit(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label=config.BUTTON_KILL_SYMBOL, style=discord.ButtonStyle.danger)
+    async def exit_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         ctx = await self.bot.get_context(interaction.message)
         await self.controller.exit(ctx)
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
