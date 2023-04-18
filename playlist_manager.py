@@ -58,9 +58,9 @@ class Playlist_manager():
                 return False
              
         thread = threading.Thread(target=self._add_first_playlist_song, args=(playlist_info, playlist))
-        thread.start()
-        thread.join()
-        thread = threading.Thread(target=self._add_other_playlist, args=(playlist_info, playlist))
+        thread.start() # wait until first song in playlist
+        thread.join() # audio start playing in audiocontroller
+        thread = threading.Thread(target=self._add_other_playlist, args=(playlist_info, playlist)) #add other songs in the playlist, laggy, try to find another solution
         thread.start()
 
     def _add_first_playlist_song(self, playlist_info, playlist: Playlist):

@@ -14,34 +14,9 @@ guild_controller = {}
 
 
 class Audio_controller():
-    """
-    This is a Python class called Audio_controller() that appears to be part of a music player bot for Discord. Let's go through the methods and attributes of this class:
-
-    Attributes:
-        bot: A Discord bot object.
-        playlist: A playlist object that stores the list of songs to be played.
-        audio_source: An audio source object that represents the current playing song.
-        is_loop: A boolean flag that indicates whether the playlist is set to loop or not.
-        playlist_manager: A Playlist_manager object that manage adding song to the playlist
-
-    Methods:
-        init(self, bot): Constructor method that initializes the object with the bot object and sets other attributes to default values.
-        _resetting(self): Resets the playlist and audio_source attributes and sets is_loop to False.
-        exit(self, ctx): Resets the attributes, sends a message to the Discord server, and disconnects the bot from the voice client.
-    #add_to_playlist(self, ctx, url): Adds a song or playlist to the playlist object by calling either add_playlist_to_playlist() or add_song_to_playlist() methods depending on the URL provided.
-    #add_playlist_to_playlist(self, ctx, url: str): Gets all the songs in a YouTube playlist and adds them to the playlist object.
-    #add_song_to_playlist(self, ctx, url: str): Gets a single song from YouTube and adds it to the playlist object.
-        play_song(self, ctx, song): Plays the song by setting up an audio stream and playing it through the voice client.
-        play_next_song(self, ctx): Changes the current playing song to the next song in the playlist if there is one. If there is no next song and is_loop is False, it exits the bot by calling the exit() method. If is_loop is True, it starts playing the same song again.
-    """
 
     def __init__(self, bot):
-        """
-        Initializes the Audio_controller class.
-
-        Parameters:
-            bot (discord.ext.commands.Bot): The bot instance.
-        """
+     
         self.bot = bot
         self.playlist = None
         self.audio_source = None
