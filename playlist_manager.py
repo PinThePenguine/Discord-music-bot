@@ -40,7 +40,7 @@ class Playlist_manager():
             logger.debug(f'New song: {song.title} with duration: {song.duration} are created')
             return song
         except Exception as e:
-            logger.error(f"Can't extract info from {url}\n {e}")
+            logger.warning(f"Can't extract info from {url}\n {e}")
             return None
 
     async def add_song(self, url: str, playlist: Playlist):
