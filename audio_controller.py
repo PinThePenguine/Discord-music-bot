@@ -89,7 +89,7 @@ class Audio_controller():
             url (str): The URL of the song or playlist to be added.
         """
         if "list" in url:  # todo add normal regex here (i think, video can have random "list" in or maybe channel name)
-            # await ctx.channel.send("Adding playlist, it may take some time")
+            await ctx.channel.send("Adding playlist, it may take some time")
             if not await self._add_playlist_to_playlist(ctx, url):
                 await ctx.channel.send("Can't add playlist, something went wrong :(")
                 return False
@@ -272,10 +272,11 @@ class Audio_controller():
         """
         Method called when the bot receives a message.
         """
-        if message.author == self.bot.user:
-            return
 
         if not self.message:
+            return
+
+        if message.content == self.message.content:
             return
 
         try:
