@@ -55,6 +55,7 @@ async def test_unavailable_youtube_url() -> None:
     youtube_unavailable_playlist_url = "https://www.youtube.com/playlist?list=PLaIpgnL0MXXpQV5mBSMk73V4-1KS5IGpO"
     youtube_unavailable_music_url = "https://music.youtube.com/watch?v=dQw4w9WgXcX"
     youtube_unavailable_short_url = "https://www.youtube.com/shorts/RMiXXAFCbAg"
+    youtube_private_video_url = "https://www.youtube.com/watch?v=QayMbsOC5q4"
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_video_url) == False
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_video_short_url) == False
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_stream_url) == False
@@ -62,3 +63,4 @@ async def test_unavailable_youtube_url() -> None:
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_playlist_url) == False
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_music_url) == False
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_short_url) == False
+    assert await Youtube_downloader.is_valid_youtube_url(youtube_private_video_url) == False

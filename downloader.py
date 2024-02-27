@@ -72,8 +72,9 @@ class Youtube_downloader:
                 pattern_unavailable_video = '"playabilityStatus":{"status":"ERROR","reason":'
                 pattern_unavailable_playlist = '{"type":"ERROR","text":{"runs":[{"text":'
                 pattern_available_music = 'content="YouTube Music">'
+                pattern_private_video = '"errorScreen":{"playerErrorMessageRenderer":{"subreason":{"simpleText":'
                 text = await response.text()
-                if pattern_unavailable_video in text or pattern_unavailable_playlist in text: return False
+                if pattern_unavailable_video in text or pattern_unavailable_playlist in text or pattern_private_video in text : return False
                 if 'href="https://music.youtube.com/favicon.ico' in text and pattern_available_music not in text: return False
                 return True
 
