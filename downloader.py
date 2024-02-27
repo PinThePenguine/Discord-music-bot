@@ -69,9 +69,13 @@ class Youtube_downloader:
         """
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
+                pattern_unavailable_video = '"playabilityStatus":{"status":"ERROR","reason":'
+                pattern_unavailable_playlist = '{"type":"ERROR","text":{"runs":[{"text":'
+                pattern_available_music = 'content="YouTube Music">'
                 text = await response.text()
-                is_valid = not ("Video unavailable" in text)
-                return is_valid
+                if pattern_unavailable_video in text or pattern_unavailable_playlist in text: return False
+                if 'href="https://music.youtube.com/favicon.ico' in text and pattern_available_music not in text: return False
+                return True
 
     @staticmethod
     async def is_valid_url(url: str) -> bool:
