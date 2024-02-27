@@ -12,7 +12,7 @@ from audio_controller import Audio_controller, guild_controller
 
 def setup_logger():
     """
-    Sets up the logger with two sinks: one for errors and one for info messages.
+    Sets up the logger with two loggers: one for errors and one for info messages.
     """
     log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
     os.makedirs(log_dir, exist_ok=True)
