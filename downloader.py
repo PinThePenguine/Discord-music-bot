@@ -52,7 +52,7 @@ class Youtube_downloader:
         Returns:
             bool: True if the URL is a valid YouTube URL, False otherwise.
         """
-        if re.search(r"^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\?v=)([^#\&\?]*).*", url) or "https://www.youtube.com/playlist?list=" in url:
+        if re.search(r"^((?:https?:)\/\/)((?:www|m)\.)?(music.)?((?:youtube(-nocookie)?\.com|youtu\.be))(\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?)([\w\-]+)(\S+)?$", url):
             return True
         return False
 
