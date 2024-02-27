@@ -77,7 +77,7 @@ class Youtube_downloader:
                 if pattern_unavailable_video in text or pattern_unavailable_playlist in text or pattern_private_video in text : return False
                 if 'href="https://music.youtube.com/favicon.ico' in text and pattern_available_music not in text: return False
                 return True
-
+    
     @staticmethod
     async def is_valid_url(url: str) -> bool:
         """
@@ -95,6 +95,19 @@ class Youtube_downloader:
 
     @staticmethod
     def normalize_youtube_playlist_url(url):
+        """
+        Normalizes a YouTube playlist URL.
+
+        This method takes a YouTube URL and returns a normalized version of it if it represents a playlist.
+        If the input URL is not a playlist URL, it returns None.
+
+        Args:
+            url (str): The URL to be normalized.
+
+        Returns:
+            Union[str, None]: A normalized YouTube playlist URL if the input URL represents a playlist, 
+            otherwise None.
+        """
         playlist_id = re.search(r"list=([^&]+)", url)
         if playlist_id is not None:
             playlist_id = playlist_id.group(1)

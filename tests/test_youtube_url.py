@@ -64,3 +64,9 @@ async def test_unavailable_youtube_url() -> None:
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_music_url) == False
     assert await Youtube_downloader.is_valid_youtube_url(youtube_unavailable_short_url) == False
     assert await Youtube_downloader.is_valid_youtube_url(youtube_private_video_url) == False
+
+def test_normalize_youtube_playlist_url() -> None:
+    result = "https://www.youtube.com/playlist?list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC"
+    assert Youtube_downloader.normalize_youtube_playlist_url("https://www.youtube.com/playlist?list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC") == result
+    assert Youtube_downloader.normalize_youtube_playlist_url("https://www.youtube.com/watch?v=Jo9Mmx7AqDQ&list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC") == result
+    assert Youtube_downloader.normalize_youtube_playlist_url("https://www.youtube.com/watch?v=Jo9Mmx7AqDQ&list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC&ab_channel=AIClips") == result
