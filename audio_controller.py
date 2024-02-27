@@ -240,7 +240,7 @@ class Audio_controller():
         else:
             await ctx.channel.send("I'm not currently in a voice channel.")
 
-    async def playlist(self, ctx):
+    async def get_playlist(self, ctx):
         await ctx.channel.send(self.playlist.print_playlist())
 
     async def on_message(self, message):
