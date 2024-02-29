@@ -10,6 +10,7 @@ BUTTON_LOOP_SYMBOL = "↺"
 BUTTON_KILL_SYMBOL = "💀"
 
 SLASH_COMMANDS = False
+MIX_SONGS_LIMIT = 25
 
 PLAY_COMMAND_BRIEF = "Play music in a voice channel"
 LOOP_COMMAND_BRIEF = "Loop the currently playing song"

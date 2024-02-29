@@ -77,11 +77,35 @@ class Audio_controller():
                 if not await self._add_song_to_playlist(ctx, normalized_url):
                     await ctx.channel.send(f"Can't add {media_type} to playlist, please check your url")
                     return False
+            case "mix":
+                if not await self._add_mix_to_playlist(ctx, url):
+                    await ctx.channel.send(f"Can't add {media_type} to playlist, please check your url")
+                    return False
             case _:
                 if not await self._add_song_to_playlist(ctx, url):
                     await ctx.channel.send(f"Can't add {media_type} to playlist, please check your url")
                     return False
         return True
+
+    async def _add_mix_to_playlist(self, ctx, url: str):
+        """
+        Adds a mix with limited amount of songs to the Audio_controller instance's playlist.
+
+        Parameters:
+            ctx (discord.ext.commands.Context): The context of the command.
+            url (str): The URL of the mix to be added.
+
+        Returns:
+            bool: Returns True if the playlist was successfully added to the MusicPlayer instance's playlist. Returns False otherwise.
+        """
+        logger.debug("Add mix")
+        try:
+            await self.playlist_manager.add_playlist(url, self.playlist, config.MIX_SONGS_LIMIT)
+        except Exception as e:
+            logger.error(f"Can't add mix to {url}\n {e}")
+            return False
+        return True
+
 
     async def _add_playlist_to_playlist(self, ctx, url: str):
         """

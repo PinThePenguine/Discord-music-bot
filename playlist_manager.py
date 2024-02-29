@@ -48,7 +48,7 @@ class Playlist_manager():
         thread.start()
         thread.join()
 
-    async def add_playlist(self, url: str, playlist: Playlist):
+    async def add_playlist(self, url: str, playlist: Playlist, limit = None):
         
         playlist_info = self.downloader.downloader.extract_info(url, download=False, process=False)
         if 'entries' not in playlist_info: 
@@ -57,7 +57,7 @@ class Playlist_manager():
         thread = threading.Thread(target=self._add_first_playlist_song, args=(playlist_info, playlist))
         thread.start() # wait until first song in playlist
         thread.join() # audio start playing in audiocontroller
-        thread = threading.Thread(target=self._add_other_playlist, args=(playlist_info, playlist)) #add other songs in the playlist, laggy, try to find another solution
+        thread = threading.Thread(target=self._add_other_playlist, args=(playlist_info, playlist, limit)) #add other songs in the playlist, laggy, try to find another solution
         thread.start()
 
     def _add_first_playlist_song(self, playlist_info, playlist: Playlist):
@@ -71,8 +71,8 @@ class Playlist_manager():
         if song:
             playlist.append_song(song)
 
-    def _add_other_playlist(self, playlist_info, playlist: Playlist):
-        for song in itertools.islice(playlist_info['entries'], 0, None):
+    def _add_other_playlist(self, playlist_info, playlist: Playlist, limit = None):
+        for song in itertools.islice(playlist_info['entries'], 0, limit):
             if self.time_to_shutdown:  # kill when audio_controller is resetting
                 self.time_to_shutdown = False
                 return
