@@ -6,6 +6,7 @@ from discord.ext import commands
 from loguru import logger
 
 import config
+from downloader import Youtube_downloader
 from playlist_manager import Playlist_manager
 from song import Song
 
@@ -63,15 +64,23 @@ class Audio_controller():
             ctx (discord.ext.commands.Context): The context of the command.
             url (str): The URL of the song or playlist to be added.
         """
-        if "list" in url:  # todo add normal regex here (i think, video can have random "list" in or maybe channel name)
-            await ctx.channel.send("Adding playlist, it may take some time")
-            if not await self._add_playlist_to_playlist(ctx, url):
-                await ctx.channel.send("Can't add playlist, something went wrong :(")
-                return False
-        else:
-            if not await self._add_song_to_playlist(ctx, url):
-                await ctx.channel.send("Can't add song to playlist, please check your url")
-                return False
+        media_type = Youtube_downloader.get_youtube_media_type(url)
+        match media_type:
+            case "playlist":
+                normalized_url = Youtube_downloader.normalize_youtube_playlist_url(url)
+                await ctx.channel.send("Adding playlist, it may take some time")
+                if not await self._add_playlist_to_playlist(ctx, normalized_url):
+                    await ctx.channel.send("Can't add playlist, error in add_to_playlist method")
+                    return False
+            case "video":
+                normalized_url = Youtube_downloader.normalize_youtube_video_url(url)
+                if not await self._add_song_to_playlist(ctx, normalized_url):
+                    await ctx.channel.send(f"Can't add {media_type} to playlist, please check your url")
+                    return False
+            case _:
+                if not await self._add_song_to_playlist(ctx, url):
+                    await ctx.channel.send(f"Can't add {media_type} to playlist, please check your url")
+                    return False
         return True
 
     async def _add_playlist_to_playlist(self, ctx, url: str):

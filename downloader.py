@@ -94,6 +94,31 @@ class Youtube_downloader:
         return False
 
     @staticmethod
+    def get_youtube_media_type(url: str) -> str:
+        """
+        Determine the type of media associated with a YouTube URL.
+
+        This method analyzes the given YouTube URL and returns the type of media it represents,
+        such as music, mix, short, playlist, or video.
+
+        Args:
+            url (str): The YouTube URL to be analyzed.
+
+        Returns:
+            str: A string representing the type of media associated with the URL. Possible values are:
+                - "music" if the URL contains "music".
+                - "mix" if the URL contains "radio".
+                - "short" if the URL contains "short".
+                - "playlist" if the URL contains "playlist".
+                - "video" if none of the above conditions match.
+        """
+        if "music" in url: return "music"
+        if "radio" in url: return "mix"
+        if "short" in url: return "short"
+        if "playlist" in url: return "playlist"
+        return "video"
+
+    @staticmethod
     def normalize_youtube_playlist_url(url):
         """
         Normalizes a YouTube playlist URL.
@@ -116,3 +141,20 @@ class Youtube_downloader:
         else:
             print("None")
             return None
+        
+    @staticmethod
+    def normalize_youtube_video_url(url: str) -> str:
+        """
+        Normalize a YouTube video URL.
+
+        This method takes a YouTube URL and returns a normalized version of it, 
+        ensuring that it is in the format of 'https://www.youtube.com/watch?v=VIDEO_ID'.
+
+        Args:
+            url (str): The YouTube URL to be normalized.
+
+        Returns:
+            str: A normalized YouTube video URL in the format 'https://www.youtube.com/watch?v=VIDEO_ID'.
+        """
+        video_id = re.findall(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
+        return f"https://www.youtube.com/watch?v={video_id[0]}"

@@ -51,11 +51,8 @@ class Playlist_manager():
     async def add_playlist(self, url: str, playlist: Playlist):
         
         playlist_info = self.downloader.downloader.extract_info(url, download=False, process=False)
-        if 'entries' not in playlist_info: # https://www.youtube.com/watch?v=Jo9Mmx7AqDQ&list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC&ab_channel=AIClips type link, need normalization
-            url = Youtube_downloader.normalize_youtube_playlist_url(url)
-            playlist_info = self.downloader.downloader.extract_info(url, download=False, process=False)
-            if 'entries' not in playlist_info:
-                return False
+        if 'entries' not in playlist_info: 
+            return False
              
         thread = threading.Thread(target=self._add_first_playlist_song, args=(playlist_info, playlist))
         thread.start() # wait until first song in playlist
