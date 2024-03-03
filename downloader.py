@@ -52,7 +52,7 @@ class Youtube_downloader:
         Returns:
             bool: True if the URL is a valid YouTube URL, False otherwise.
         """
-        if re.search(r"^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\?v=)([^#\&\?]*).*", url) or "https://www.youtube.com/playlist?list=" in url:
+        if re.search(r"^((?:https?:)\/\/)((?:www|m)\.)?(music.)?((?:youtube(-nocookie)?\.com|youtu\.be))(\/(?:[\w\-]+\?v=|embed\/|live\/|v\/)?)([\w\-]+)(\S+)?$", url):
             return True
         return False
 
@@ -69,10 +69,15 @@ class Youtube_downloader:
         """
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
+                pattern_unavailable_video = '"playabilityStatus":{"status":"ERROR","reason":'
+                pattern_unavailable_playlist = '{"type":"ERROR","text":{"runs":[{"text":'
+                pattern_available_music = 'content="YouTube Music">'
+                pattern_private_video = '"errorScreen":{"playerErrorMessageRenderer":{"subreason":{"simpleText":'
                 text = await response.text()
-                is_valid = not ("Video unavailable" in text)
-                return is_valid
-
+                if pattern_unavailable_video in text or pattern_unavailable_playlist in text or pattern_private_video in text : return False
+                if 'href="https://music.youtube.com/favicon.ico' in text and pattern_available_music not in text: return False
+                return True
+    
     @staticmethod
     async def is_valid_url(url: str) -> bool:
         """
@@ -89,7 +94,45 @@ class Youtube_downloader:
         return False
 
     @staticmethod
+    def get_youtube_media_type(url: str) -> str:
+        """
+        Determine the type of media associated with a YouTube URL.
+
+        This method analyzes the given YouTube URL and returns the type of media it represents,
+        such as music, mix, short, playlist, or video.
+
+        Args:
+            url (str): The YouTube URL to be analyzed.
+
+        Returns:
+            str: A string representing the type of media associated with the URL. Possible values are:
+                - "music" if the URL contains "music".
+                - "mix" if the URL contains "radio".
+                - "short" if the URL contains "short".
+                - "playlist" if the URL contains "playlist".
+                - "video" if none of the above conditions match.
+        """
+        if "music" in url: return "music"
+        if "radio" in url: return "mix"
+        if "short" in url: return "short"
+        if "playlist" in url: return "playlist"
+        return "video"
+
+    @staticmethod
     def normalize_youtube_playlist_url(url):
+        """
+        Normalizes a YouTube playlist URL.
+
+        This method takes a YouTube URL and returns a normalized version of it if it represents a playlist.
+        If the input URL is not a playlist URL, it returns None.
+
+        Args:
+            url (str): The URL to be normalized.
+
+        Returns:
+            Union[str, None]: A normalized YouTube playlist URL if the input URL represents a playlist, 
+            otherwise None.
+        """
         playlist_id = re.search(r"list=([^&]+)", url)
         if playlist_id is not None:
             playlist_id = playlist_id.group(1)
@@ -98,3 +141,20 @@ class Youtube_downloader:
         else:
             print("None")
             return None
+        
+    @staticmethod
+    def normalize_youtube_video_url(url: str) -> str:
+        """
+        Normalize a YouTube video URL.
+
+        This method takes a YouTube URL and returns a normalized version of it, 
+        ensuring that it is in the format of 'https://www.youtube.com/watch?v=VIDEO_ID'.
+
+        Args:
+            url (str): The YouTube URL to be normalized.
+
+        Returns:
+            str: A normalized YouTube video URL in the format 'https://www.youtube.com/watch?v=VIDEO_ID'.
+        """
+        video_id = re.findall(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", url)
+        return f"https://www.youtube.com/watch?v={video_id[0]}"

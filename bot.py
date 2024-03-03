@@ -93,6 +93,16 @@ def main():
         if isinstance(error, commands.CommandOnCooldown):
             seconds = error.retry_after
             await ctx.channel.send(f"This command is on cooldown. Try again in {seconds:.2f} seconds.")
+    
+    @bot.event
+    async def on_voice_state_update(member, before, after):
+        if after.channel is None: 
+            if len(before.channel.members) == 1: 
+                voice_client = discord.utils.get(bot.voice_clients, guild=before.channel.guild)
+                if voice_client:
+                    await guild_controller[voice_client.guild].message.delete()       
+                    guild_controller[voice_client.guild].resetting()
+                    await voice_client.disconnect()
 
     @bot.tree.command(name="pin")
     async def pin(interaction: discord.Interaction):
