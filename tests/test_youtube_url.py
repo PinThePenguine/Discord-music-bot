@@ -77,7 +77,6 @@ def test_valid_youtube_urls() -> None:
         assert Youtube_downloader.is_youtube_url(line) is True
 
 def test_normalize_youtube_video_url() -> None:
-    print(Youtube_downloader.normalize_youtube_video_url('http://youtu.be/SA2iWivDJiE'))
     assert Youtube_downloader.normalize_youtube_video_url("http://youtu.be/SA2iWivDJiE") == "https://www.youtube.com/watch?v=SA2iWivDJiE"
     assert Youtube_downloader.normalize_youtube_video_url("http://www.youtube.com/watch?v=_oPAwA_Udwc&feature=feedu") == "https://www.youtube.com/watch?v=_oPAwA_Udwc"
     assert Youtube_downloader.normalize_youtube_video_url("http://www.youtube.com/embed/SA2iWivDJiE") == "https://www.youtube.com/watch?v=SA2iWivDJiE"
