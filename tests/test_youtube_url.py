@@ -60,15 +60,15 @@ async def test_unavailable_youtube_url() -> None:
     assert await Youtube_downloader.is_valid_youtube_url(youtube_private_video_url) == False
 
 def test_get_youtube_media_type() -> None:
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley") is "video"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=dQw4w9WgXcQ") is "video"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=jfKfPfyJRdk&ab_channel=LofiGirl") is "video"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=eOii1YaxRK8&list=RDeOii1YaxRK8&start_radio=1&ab_channel=Cringelord") is "mix"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/playlist?list=PLaIpgnL0MSIpQV5mBSMk73V4-1KS5IGpO") is "playlist"
-    assert Youtube_downloader.get_youtube_media_type("https://music.youtube.com/watch?v=dQw4w9WgXcQ") is "music"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/shorts/RMiOtRFwbAg") is "short"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/playlist?list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC") is "playlist"
-    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=Ph4BZqB7yr4&list=PLETrjXbz9eLX_QaeiE-Jx2uFyJTffFcu3&index=53") is "video"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley") == "video"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "video"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=jfKfPfyJRdk&ab_channel=LofiGirl") == "video"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=eOii1YaxRK8&list=RDeOii1YaxRK8&start_radio=1&ab_channel=Cringelord") == "mix"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/playlist?list=PLaIpgnL0MSIpQV5mBSMk73V4-1KS5IGpO") == "playlist"
+    assert Youtube_downloader.get_youtube_media_type("https://music.youtube.com/watch?v=dQw4w9WgXcQ") == "music"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/shorts/RMiOtRFwbAg") == "short"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/playlist?list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC") == "playlist"
+    assert Youtube_downloader.get_youtube_media_type("https://www.youtube.com/watch?v=Ph4BZqB7yr4&list=PLETrjXbz9eLX_QaeiE-Jx2uFyJTffFcu3&index=53") == "video"
     
 def test_valid_youtube_urls() -> None:
     file = open('tests\\youtube_urls.txt', 'r')
@@ -77,14 +77,15 @@ def test_valid_youtube_urls() -> None:
         assert Youtube_downloader.is_youtube_url(line) is True
 
 def test_normalize_youtube_video_url() -> None:
-    assert Youtube_downloader.normalize_youtube_video_url('http://youtu.be/SA2iWivDJiE') is "https://www.youtube.com/watch?v=SA2iWivDJiE"
-    assert Youtube_downloader.normalize_youtube_video_url('http://www.youtube.com/watch?v=_oPAwA_Udwc&feature=feedu') is "https://www.youtube.com/watch?v=_oPAwA_Udwc"
-    assert Youtube_downloader.normalize_youtube_video_url('http://www.youtube.com/embed/SA2iWivDJiE') is "https://www.youtube.com/watch?v=SA2iWivDJiE"
-    assert Youtube_downloader.normalize_youtube_video_url('http://www.youtube.com/v/SA2iWivDJiE?version=3&amp;hl=en_US') is "https://www.youtube.com/watch?v=SA2iWivDJiE"
-    assert Youtube_downloader.normalize_youtube_video_url('https://www.youtube.com/watch?v=rTHlyTphWP0&index=6&list=PLjeDyYvG6-40qawYNR4juzvSOg-ezZ2a6') is "https://www.youtube.com/watch?v=rTHlyTphWP0"
-    assert Youtube_downloader.normalize_youtube_video_url('youtube.com/watch?v=_lOT2p_FCvA') is "https://www.youtube.com/watch?v=_lOT2p_FCvA"
-    assert Youtube_downloader.normalize_youtube_video_url('youtu.be/watch?v=_lOT2p_FCvA') is "https://www.youtube.com/watch?v=_lOT2p_FCvA"
-    assert Youtube_downloader.normalize_youtube_video_url('https://www.youtube.com/watch?time_continue=9&v=n0g-Y0oo5Qs&feature=emb_logo') is "https://www.youtube.com/watch?v=n0g-Y0oo5Qs"
+    print(Youtube_downloader.normalize_youtube_video_url('http://youtu.be/SA2iWivDJiE'))
+    assert Youtube_downloader.normalize_youtube_video_url("http://youtu.be/SA2iWivDJiE") == "https://www.youtube.com/watch?v=SA2iWivDJiE"
+    assert Youtube_downloader.normalize_youtube_video_url("http://www.youtube.com/watch?v=_oPAwA_Udwc&feature=feedu") == "https://www.youtube.com/watch?v=_oPAwA_Udwc"
+    assert Youtube_downloader.normalize_youtube_video_url("http://www.youtube.com/embed/SA2iWivDJiE") == "https://www.youtube.com/watch?v=SA2iWivDJiE"
+    assert Youtube_downloader.normalize_youtube_video_url("http://www.youtube.com/v/SA2iWivDJiE?version=3&amp;hl=en_US") == "https://www.youtube.com/watch?v=SA2iWivDJiE"
+    assert Youtube_downloader.normalize_youtube_video_url("https://www.youtube.com/watch?v=rTHlyTphWP0&index=6&list=PLjeDyYvG6-40qawYNR4juzvSOg-ezZ2a6") == "https://www.youtube.com/watch?v=rTHlyTphWP0"
+    assert Youtube_downloader.normalize_youtube_video_url("youtube.com/watch?v=_lOT2p_FCvA") == "https://www.youtube.com/watch?v=_lOT2p_FCvA"
+    assert Youtube_downloader.normalize_youtube_video_url("youtu.be/watch?v=_lOT2p_FCvA") == "https://www.youtube.com/watch?v=_lOT2p_FCvA"
+    assert Youtube_downloader.normalize_youtube_video_url("https://www.youtube.com/watch?time_continue=9&v=n0g-Y0oo5Qs&feature=emb_logo") == "https://www.youtube.com/watch?v=n0g-Y0oo5Qs"
 
 def test_normalize_youtube_playlist_url() -> None:
     result = "https://www.youtube.com/playlist?list=PLMO3zUYl0xd2Zbrkx1ERFFrU6Z48DWTFC"
