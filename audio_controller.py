@@ -26,7 +26,7 @@ class Audio_controller():
         self.view = AudioPlayerView(bot, self)
         self.message = None
 
-    def _resetting(self):
+    def resetting(self):
         """
         Resets the music player to its default state.
         """
@@ -51,10 +51,11 @@ class Audio_controller():
         except discord.NotFound:
             logger.warning(f"Failed to delete message, message not found")
 
-        self._resetting()
+        self.resetting()
         await ctx.channel.send("My job here is done!")
-        await ctx.guild.voice_client.disconnect()
-        logger.debug("Disconnected from voice client")
+        if ctx.guild.voice_client is not None:
+            await ctx.guild.voice_client.disconnect()
+            logger.debug("Disconnected from voice client")
 
     async def add_to_playlist(self, ctx, url: str):
         """
@@ -145,20 +146,24 @@ class Audio_controller():
         """
         logger.debug("Trying to play song")
 
-        if not self.message:
-            if config.AUDIOPLAYER_UI:
-                self.message = await ctx.channel.send(f"Now playing: {song.title}", view=self.view)
+        if ctx.voice_client is not None:
+            if not self.message:
+                if config.AUDIOPLAYER_UI:
+                    self.message = await ctx.channel.send(f"Now playing: {song.title}", view=self.view)
+                else:
+                    self.message = await ctx.channel.send(f"Now playing: {song.title}")
             else:
-                self.message = await ctx.channel.send(f"Now playing: {song.title}")
-        else:
-            await self.message.edit(content=f"Now playing: {song.title}")
+                await self.message.edit(content=f"Now playing: {song.title}")
 
-        self.audio_source = discord.FFmpegPCMAudio(
-            song.url,
-            **FFMPEG_OPTIONS
-        )
-        ctx.voice_client.play(self.audio_source, after=lambda e: self.play_next_song(ctx))
-        logger.debug("Audio stream started")
+            self.audio_source = discord.FFmpegPCMAudio(
+                song.url,
+                **FFMPEG_OPTIONS
+            )
+            if ctx.voice_client is not None:
+                ctx.voice_client.play(self.audio_source, after=lambda e: self.play_next_song(ctx))
+                logger.debug("Audio stream started")
+        else:
+           await self.exit(ctx)
 
     def play_next_song(self, ctx):
         """

@@ -100,6 +100,8 @@ def main():
             if len(before.channel.members) == 1: 
                 voice_client = discord.utils.get(bot.voice_clients, guild=before.channel.guild)
                 if voice_client:
+                    await guild_controller[voice_client.guild].message.delete()       
+                    guild_controller[voice_client.guild].resetting()
                     await voice_client.disconnect()
 
     @bot.tree.command(name="pin")
